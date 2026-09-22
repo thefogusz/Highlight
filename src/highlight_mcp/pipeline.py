@@ -12,6 +12,21 @@ from pathlib import Path
 from .core import Failure, valid_range, MAX_SOURCE_SECONDS
 
 
+def refresh_missing_heatmap(metadata, fetch):
+    try:
+        fresh = fetch()
+        heatmap = fresh.get('heatmap')
+        if heatmap is not None and not isinstance(heatmap, list):
+            return metadata, 'fetch_failed'
+        return {**metadata, 'heatmap': heatmap}, 'available' if heatmap else 'not_returned'
+    except Failure as exc:
+        if exc.code != 'RENDER_FAILED':
+            raise
+        return metadata, 'fetch_failed'
+    except (ValueError, TypeError, AttributeError):
+        return metadata, 'fetch_failed'
+
+
 def validate_source_duration(duration, is_live):
     if is_live or not valid_range(0, duration, MAX_SOURCE_SECONDS):
         raise Failure("LIMIT_EXCEEDED", "Use a completed video no longer than six hours.")
@@ -135,15 +150,29 @@ def run(settings, store, job, check):
         def fetch_metadata():
             raw = json.loads(command(base + ["--dump-single-json", "--skip-download", job["request"]["url"]], check, 180))
             return {key: raw.get(key) for key in ("duration", "is_live", "heatmap")}
+        had_metadata = (root / 'metadata.json').exists()
         metadata = cached("metadata", fetch_metadata)
         duration = metadata.get("duration") or 0
         validate_source_duration(duration, metadata.get("is_live"))
         if any(not valid_range(r["start_seconds"], r["end_seconds"], duration) for r in opts["focus_ranges"]):
             raise Failure("INVALID_RANGE", "Focus range exceeds video duration.")
+        heatmap_state = 'available' if metadata.get('heatmap') else 'not_returned'
+        # One fresh metadata request per run, never a video download or model call.
+        # Preserve cached candidate decisions on retries; don't silently reanalyse paid work.
+        if opts['heatmap'] != 'ignore' and had_metadata and not metadata.get('heatmap') and not (root / 'candidates.json').exists():
+            metadata, heatmap_state = refresh_missing_heatmap(metadata, fetch_metadata)
+            if heatmap_state != 'fetch_failed':
+                temporary = root / 'metadata.tmp'
+                temporary.write_text(json.dumps(metadata, ensure_ascii=False), encoding='utf-8')
+                temporary.replace(root / 'metadata.json')
         heatmap = [] if opts["heatmap"] == "ignore" else metadata.get("heatmap") or []
+        warnings = ([] if heatmap else
+                    ['ปิดการใช้กราฟดูซ้ำตามตัวเลือกของงาน'] if opts['heatmap'] == 'ignore' else
+                    ['ลองดึงกราฟดูซ้ำใหม่ไม่สำเร็จ ยังสรุปไม่ได้ว่าคลิปไม่มีกราฟ; ใช้บทสนทนาและภาพ/เสียงแทน'] if heatmap_state == 'fetch_failed' else
+                    ['ข้อมูล YouTube ที่ดึงได้ไม่ส่งกราฟดูซ้ำมา ไม่ยืนยันว่าคลิปไม่มีกราฟ; ใช้บทสนทนาและภาพ/เสียงแทน'])
+        store.update(job['id'], duration=duration, warnings=warnings)
         if not heatmap and opts["heatmap"] == "require":
-            raise Failure("HEATMAP_UNAVAILABLE", "This video has no accessible replay heatmap.")
-        store.update(job["id"], duration=duration, warnings=[] if heatmap else ["Replay heatmap unavailable or ignored; replay scores remain null."])
+            raise Failure("HEATMAP_UNAVAILABLE", warnings[0])
         source = root / "source.mp4"
         if not source.exists():
             command(base + ["--max-filesize", "5G", "--ffmpeg-location", str(Path(settings.binary("ffmpeg")).parent), "-f", "bv*[height<=720]+ba/b[height<=720]", "--merge-output-format", "mp4", "--remux-video", "mp4", "-o", str(root / "download.%(ext)s"), job["request"]["url"]], check)

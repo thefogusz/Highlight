@@ -11,7 +11,7 @@ def test_cached_ingest_to_verified_clip_with_fake_provider(tmp_path, monkeypatch
     monkeypatch.setenv("GEMINI_API_KEY", "synthetic-key")
     monkeypatch.setenv("HIGHLIGHT_MODEL", "synthetic-model")
     service = Service(Settings(tmp_path), launch=False)
-    result = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk", "target_clips": 1, "min_duration_seconds": 5, "max_duration_seconds": 8, "captions": "srt"})
+    result = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk", "target_clips": 1, "min_duration_seconds": 5, "max_duration_seconds": 8, "captions": "srt", "heatmap": "ignore"})
     job = service.store.get(result["job_id"])
     folder = tmp_path / job["id"]
     folder.mkdir()
@@ -38,3 +38,4 @@ def test_cached_ingest_to_verified_clip_with_fake_provider(tmp_path, monkeypatch
     assert status['ok'] and status['usage']['total_tokens'] == 300
     assert status['usage']['reported_calls'] == 2
     assert status['dashboard_path'].endswith('dashboard.html')
+
