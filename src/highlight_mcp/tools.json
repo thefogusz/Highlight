@@ -1,0 +1,1794 @@
+{
+  "tools": [
+    {
+      "name": "highlight_create",
+      "description": "Create Thai highlight clips from one public YouTube URL. URL alone is enough; defaults auto-analyze and render. Returns job_id immediately. No API key argument. Poll status; do not resubmit to check progress.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://(?:www\\.|m\\.)?(?:youtube\\.com|youtu\\.be)/[^\\s]+$",
+            "maxLength": 2048
+          },
+          "intent": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "highlight",
+                "important",
+                "funny",
+                "most_replayed"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 4,
+            "uniqueItems": true,
+            "default": [
+              "highlight",
+              "important",
+              "funny",
+              "most_replayed"
+            ]
+          },
+          "target_clips": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 8
+          },
+          "min_duration_seconds": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 300,
+            "default": 30
+          },
+          "max_duration_seconds": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 300,
+            "default": 120
+          },
+          "aspect": {
+            "type": "string",
+            "enum": [
+              "16:9",
+              "9:16"
+            ],
+            "default": "16:9"
+          },
+          "captions": {
+            "type": "string",
+            "enum": [
+              "off",
+              "srt"
+            ],
+            "default": "off"
+          },
+          "heatmap": {
+            "type": "string",
+            "enum": [
+              "prefer",
+              "require",
+              "ignore"
+            ],
+            "default": "prefer"
+          },
+          "focus_ranges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "end_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "start_seconds",
+                "end_seconds"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 20,
+            "default": []
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled"
+                ]
+              },
+              "reused": {
+                "type": "boolean"
+              },
+              "resolved_options": {
+                "type": "object",
+                "properties": {
+                  "intent": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "default": ""
+                  },
+                  "categories": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "highlight",
+                        "important",
+                        "funny",
+                        "most_replayed"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "uniqueItems": true,
+                    "default": [
+                      "highlight",
+                      "important",
+                      "funny",
+                      "most_replayed"
+                    ]
+                  },
+                  "target_clips": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20,
+                    "default": 8
+                  },
+                  "min_duration_seconds": {
+                    "type": "number",
+                    "minimum": 5,
+                    "maximum": 300,
+                    "default": 30
+                  },
+                  "max_duration_seconds": {
+                    "type": "number",
+                    "minimum": 5,
+                    "maximum": 300,
+                    "default": 120
+                  },
+                  "aspect": {
+                    "type": "string",
+                    "enum": [
+                      "16:9",
+                      "9:16"
+                    ],
+                    "default": "16:9"
+                  },
+                  "captions": {
+                    "type": "string",
+                    "enum": [
+                      "off",
+                      "srt"
+                    ],
+                    "default": "off"
+                  },
+                  "heatmap": {
+                    "type": "string",
+                    "enum": [
+                      "prefer",
+                      "require",
+                      "ignore"
+                    ],
+                    "default": "prefer"
+                  },
+                  "focus_ranges": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "start_seconds": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "end_seconds": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "start_seconds",
+                        "end_seconds"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  }
+                },
+                "required": [
+                  "intent",
+                  "categories",
+                  "target_clips",
+                  "min_duration_seconds",
+                  "max_duration_seconds",
+                  "aspect",
+                  "captions",
+                  "heatmap",
+                  "focus_ranges"
+                ],
+                "additionalProperties": false
+              },
+              "poll_after_seconds": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 60
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "state",
+              "reused",
+              "resolved_options",
+              "poll_after_seconds"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "highlight_status",
+      "description": "Read durable job status without invoking paid analysis. Follow poll_after_seconds; do not spin.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled"
+                ]
+              },
+              "stage": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "preflight",
+                      "ingest",
+                      "transcribe",
+                      "discover",
+                      "inspect",
+                      "render",
+                      "verify"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "progress": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cancel_requested": {
+                "type": "boolean"
+              },
+              "poll_after_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "state",
+              "stage",
+              "progress",
+              "cancel_requested",
+              "poll_after_seconds"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_results",
+      "description": "List verified clips, including partial ready results. Returns original-source times and artifact paths/resources; outputs may expire.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "job_state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled"
+                ]
+              },
+              "clips": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "title_th": {
+                      "type": "string"
+                    },
+                    "start_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "end_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "highlight",
+                          "important",
+                          "funny",
+                          "most_replayed"
+                        ]
+                      },
+                      "minItems": 1,
+                      "maxItems": 4,
+                      "uniqueItems": true
+                    },
+                    "reason_th": {
+                      "type": "string"
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "heatmap",
+                              "transcript",
+                              "audio_visual"
+                            ]
+                          },
+                          "description_th": {
+                            "type": "string"
+                          },
+                          "start_seconds": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "end_seconds": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "description_th",
+                          "start_seconds",
+                          "end_seconds"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 1
+                    },
+                    "replay_score": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "confidence": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                      ]
+                    },
+                    "verification": {
+                      "const": "verified"
+                    },
+                    "artifacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "video",
+                              "thumbnail",
+                              "transcript"
+                            ]
+                          },
+                          "mime_type": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "resource_uri": {
+                            "type": "string",
+                            "pattern": "^highlight://"
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "size_bytes": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "expires_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "mime_type",
+                          "path",
+                          "resource_uri",
+                          "sha256",
+                          "size_bytes",
+                          "expires_at"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 1,
+                      "contains": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "const": "video"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "clip_id",
+                    "revision",
+                    "title_th",
+                    "start_seconds",
+                    "end_seconds",
+                    "categories",
+                    "reason_th",
+                    "evidence",
+                    "replay_score",
+                    "confidence",
+                    "verification",
+                    "artifacts"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "next_cursor": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 256
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source_url": {
+                "type": "string",
+                "format": "uri",
+                "pattern": "^https://(?:www\\.|m\\.)?(?:youtube\\.com|youtu\\.be)/[^\\s]+$",
+                "maxLength": 2048
+              },
+              "source_duration_seconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "job_state",
+              "clips",
+              "next_cursor",
+              "source_url",
+              "source_duration_seconds"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_revise",
+      "description": "Queue a new immutable revision of one clip using absolute ORIGINAL source times. Preserve original; requires expected_revision. Returns operation job_id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "clip_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "start_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end_seconds": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "job_id",
+          "clip_id",
+          "expected_revision",
+          "start_seconds",
+          "end_seconds"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "parent_job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "clip_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled"
+                ]
+              },
+              "reused": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "parent_job_id",
+              "clip_id",
+              "state",
+              "reused"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_cancel",
+      "description": "Request cooperative cancellation. Does not delete files or reverse incurred provider charges.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled"
+                ]
+              },
+              "cancel_requested": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "state",
+              "cancel_requested"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_retry",
+      "description": "Explicitly resume failed, interrupted or waiting work from checkpoints. Uncertain provider outcomes may incur another charge; explain returned warnings. Duplicate retry of active work reuses it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled"
+                ]
+              },
+              "reused": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "state",
+              "reused"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "highlight_settings",
+      "description": "Read sanitized settings/readiness. Never returns API key. Configure secrets outside chat via environment or local wizard. No provider test is performed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "provider": {
+                "const": "gemini"
+              },
+              "model": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "key_configured": {
+                "type": "boolean"
+              },
+              "key_source": {
+                "type": "string",
+                "enum": [
+                  "environment",
+                  "keyring",
+                  "none"
+                ]
+              },
+              "key_status": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "valid",
+                  "invalid"
+                ]
+              },
+              "config_version": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+              },
+              "ready": {
+                "type": "boolean"
+              },
+              "missing": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "provider",
+              "model",
+              "key_configured",
+              "key_source",
+              "key_status",
+              "config_version",
+              "ready",
+              "missing"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_jobs",
+      "description": "List retained jobs, newest first, to recover progress after a chat closes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "jobs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "job_id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "waiting_for_configuration",
+                        "waiting_for_budget",
+                        "interrupted",
+                        "completed",
+                        "partial",
+                        "failed",
+                        "cancelled"
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "source_url": {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^https://(?:www\\.|m\\.)?(?:youtube\\.com|youtu\\.be)/[^\\s]+$",
+                      "maxLength": 2048
+                    }
+                  },
+                  "required": [
+                    "job_id",
+                    "state",
+                    "created_at",
+                    "source_url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "next_cursor": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 256
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "jobs",
+              "next_cursor"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}
