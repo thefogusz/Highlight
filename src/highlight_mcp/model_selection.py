@@ -2,7 +2,8 @@
 Sources: https://ai.google.dev/gemini-api/docs/models/<model-id>, 2026-09-22.
 Never infer modality support from generateContent alone.
 """
-FLASH = ('gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash')
+# Product baseline; a newer model must not displace it merely by version number.
+FLASH = ('gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash')
 PRO = ('gemini-2.5-pro',)
 
 
@@ -13,8 +14,10 @@ def available_models(models):
 
 def suitable_models(models):
     available = available_models(models)
-    return [next(m for m in family if m in available)
-            for family in (FLASH, PRO) if any(m in available for m in family)]
+    # Keep every reviewed, API-visible fallback in preference order.  Selecting
+    # only the first Flash model made a temporarily unavailable preferred model
+    # hide viable Flash alternatives from the setup UI.
+    return [model for family in (FLASH, PRO) for model in family if model in available]
 
 
 def select_model(models, preferred=None):
