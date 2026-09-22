@@ -20,6 +20,7 @@ from jsonschema import Draft202012Validator, ValidationError
 TOOLS = json.loads(Path(__file__).with_name("tools.json").read_text(encoding="utf-8"))["tools"]
 CATALOG = {t["name"]: t for t in TOOLS}
 TERMINAL = {"completed", "partial", "failed", "cancelled"}
+MAX_SOURCE_SECONDS = 6 * 60 * 60
 
 
 class Failure(Exception):
@@ -204,7 +205,7 @@ class Service:
             request_key = args.pop("idempotency_key", None)
             defaults = {k: copy.deepcopy(v["default"]) for k, v in CATALOG[name]["inputSchema"]["properties"].items() if "default" in v}
             opts = {**defaults, **args}
-            if opts["max_duration_seconds"] < opts["min_duration_seconds"] or any(not valid_range(r["start_seconds"], r["end_seconds"], 7200) for r in opts["focus_ranges"]):
+            if opts["max_duration_seconds"] < opts["min_duration_seconds"] or any(not valid_range(r["start_seconds"], r["end_seconds"], MAX_SOURCE_SECONDS) for r in opts["focus_ranges"]):
                 raise Failure("INVALID_RANGE", "Duration or focus range is invalid.")
             job, reused = self.store.submit({"url": url, "options": opts}, {"model": self.settings.model}, request_key)
             if job["state"] == "queued" and not self.settings.public()["ready"]:

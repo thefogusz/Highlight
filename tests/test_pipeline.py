@@ -5,6 +5,25 @@ import pytest
 
 from highlight_mcp.core import Settings, Failure
 from highlight_mcp.pipeline import choose_candidates, render_clip, validate_proposal
+from highlight_mcp.pipeline import validate_source_duration, discovery_windows
+
+
+def test_actual_long_episode_is_supported():
+    validate_source_duration(8292, False)
+
+
+@pytest.mark.parametrize('duration,live', [(21601, False), (8292, True), (0, False)])
+def test_source_limits_remain_bounded(duration, live):
+    with pytest.raises(Failure):
+        validate_source_duration(duration, live)
+
+
+@pytest.mark.parametrize('duration,target', [(8292, 8), (21600, 8), (21600, 20)])
+def test_long_episode_windows_cover_source_within_call_budget(duration, target):
+    windows = discovery_windows(duration, target)
+    assert windows[0][0] == 0 and windows[-1][1] == duration
+    assert all(b[0] <= a[1] for a, b in zip(windows, windows[1:]))
+    assert len(windows) + target + 1 <= 30
 
 
 def test_missing_heatmap_does_not_invent_replay_score():
