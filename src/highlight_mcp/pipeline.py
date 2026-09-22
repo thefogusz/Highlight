@@ -45,6 +45,8 @@ def selection_ranges(opts, duration):
     if not valid_range(start, duration, duration):
         raise Failure('INVALID_RANGE', 'Start time must be before the end of the video.')
     ranges = opts['focus_ranges'] or [{'start_seconds': start, 'end_seconds': duration}]
+    # Only trim a sub-quarter-second end rounding difference; never expand clips.
+    ranges = [{**r, 'end_seconds': duration if duration < r['end_seconds'] <= duration + .25 else r['end_seconds']} for r in ranges]
     if any(not valid_range(r['start_seconds'], r['end_seconds'], duration) for r in ranges):
         raise Failure('INVALID_RANGE', 'Focus range exceeds video duration.')
     ranges = [{**r, 'start_seconds': max(start, r['start_seconds'])} for r in ranges if r['end_seconds'] > start]
@@ -171,7 +173,7 @@ def run(settings, store, job, check):
         metadata = cached("metadata", fetch_metadata)
         duration = metadata.get("duration") or 0
         validate_source_duration(duration, metadata.get("is_live"))
-        selection_ranges(opts, duration)
+        # Metadata duration is often rounded. Validate focus against the media probe below.
         heatmap_state = 'available' if metadata.get('heatmap') else 'not_returned'
         # One fresh metadata request per run, never a video download or model call.
         # Preserve cached candidate decisions on retries; don't silently reanalyse paid work.
@@ -220,12 +222,19 @@ def run(settings, store, job, check):
         client = genai.Client(api_key=settings.key()[0], http_options=types.HttpOptions(timeout=120000, retry_options=types.HttpRetryOptions(attempts=1)))
         def ask(prompt, media=None):
             check()
-            calls = store.get(job["id"]).get("provider_calls", 0)
-            if calls >= 30:
-                raise Failure("BUDGET_EXCEEDED", "Reached the local limit of 30 model calls per job.")
-            store.update(job["id"], provider_calls=calls+1)
+            def invoke():
+                calls = store.get(job["id"]).get("provider_calls", 0)
+                if calls >= 30:
+                    raise Failure("BUDGET_EXCEEDED", "Reached the local limit of 30 model calls per job.")
+                store.update(job["id"], provider_calls=calls+1)
+                return client.models.generate_content(model=settings.model, contents=([media] if media else []) + [prompt], config=types.GenerateContentConfig(response_mime_type="application/json", temperature=.2))
+            def retry_notice(message):
+                warnings = store.get(job['id'])['warnings']
+                store.update(job['id'], warnings=warnings + [message])
+            from .worker import Cancelled
             try:
-                response = client.models.generate_content(model=settings.model, contents=([media] if media else []) + [prompt], config=types.GenerateContentConfig(response_mime_type="application/json", temperature=.2))
+                from .provider_errors import generate_with_retry
+                response = generate_with_retry(invoke, check, retry_notice)
                 from .usage import record_usage
                 usage = record_usage(store.get(job['id']), getattr(response, 'usage_metadata', None), settings.model)
                 store.update(job['id'], usage=usage)
@@ -234,7 +243,7 @@ def run(settings, store, job, check):
                 parsed = json.loads(response.text)
                 if not isinstance(parsed, dict):
                     raise Failure('MODEL_OUTPUT_INVALID', 'Provider JSON must be an object. No automatic retry was made.')
-            except Failure:
+            except (Failure, Cancelled):
                 raise
             except Exception as exc:
                 from .provider_errors import provider_failure

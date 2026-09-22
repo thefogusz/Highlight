@@ -9,10 +9,13 @@ from highlight_mcp.pipeline import run
 from highlight_mcp.core import Failure
 
 
-@pytest.mark.parametrize('reply,expected', [('not JSON', 'MODEL_OUTPUT_INVALID'), (None, 'MODEL_OUTPUT_INVALID'), ('[]', 'MODEL_OUTPUT_INVALID'), ('{}', 'MODEL_OUTPUT_INVALID'), (429, 'PROVIDER_RATE_LIMITED')])
+@pytest.mark.parametrize('reply,expected', [('not JSON', 'MODEL_OUTPUT_INVALID'), (None, 'MODEL_OUTPUT_INVALID'), ('[]', 'MODEL_OUTPUT_INVALID'), ('{}', 'MODEL_OUTPUT_INVALID'), (429, 'PROVIDER_RATE_LIMITED'), (503, 'PROVIDER_UNAVAILABLE')])
 def test_provider_failure_stops_after_one_call(tmp_path, monkeypatch, reply, expected):
     from google.genai.errors import ClientError
     from highlight_mcp import pipeline
+    from highlight_mcp import provider_errors
+    from functools import partial
+    monkeypatch.setattr(provider_errors, 'generate_with_retry', partial(provider_errors.generate_with_retry, sleep=lambda _: None))
     monkeypatch.setenv('GEMINI_API_KEY', 'synthetic-key')
     monkeypatch.setenv('HIGHLIGHT_MODEL', 'synthetic-model')
     service = Service(Settings(tmp_path), launch=False)
@@ -31,8 +34,8 @@ def test_provider_failure_stops_after_one_call(tmp_path, monkeypatch, reply, exp
         def generate(self, **kwargs):
             calls.append(kwargs)
             assert 'before timestamp' not in kwargs['contents'][0]
-            if reply == 429:
-                raise ClientError(429, {'error': {'message': 'synthetic-key'}})
+            if reply in (429, 503):
+                raise ClientError(reply, {'error': {'message': 'synthetic-key'}})
             return SimpleNamespace(text=reply, usage_metadata=None)
         def close(self):
             closed.append(True)
@@ -41,8 +44,9 @@ def test_provider_failure_stops_after_one_call(tmp_path, monkeypatch, reply, exp
         run(service.settings, service.store, job, lambda: None)
     assert caught.value.code == expected
     assert 'synthetic-key' not in str(caught.value)
-    assert len(calls) == 1 and closed == [True]
-    assert service.store.get(job['id'])['provider_calls'] == 1
+    expected_calls = 3 if reply == 503 else 1
+    assert len(calls) == expected_calls and closed == [True]
+    assert service.store.get(job['id'])['provider_calls'] == expected_calls
 
 
 def test_cached_ingest_to_verified_clip_with_fake_provider(tmp_path, monkeypatch):

@@ -9,6 +9,15 @@ from highlight_mcp.pipeline import validate_source_duration, discovery_windows
 from highlight_mcp.pipeline import selection_ranges
 
 
+def test_focus_end_rounding_is_clamped_but_real_overrun_rejected():
+    opts = {'start_seconds': 574, 'focus_ranges': [{'start_seconds': 574, 'end_seconds': 1187.014}]}
+    assert selection_ranges(opts, 1187)[0]['end_seconds'] == 1187
+    assert opts['focus_ranges'][0]['end_seconds'] == 1187.014
+    opts['focus_ranges'][0]['end_seconds'] = 1188
+    with pytest.raises(Failure):
+        selection_ranges(opts, 1187)
+
+
 def test_timestamp_scope_filters_early_clips_and_validates_end():
     focus = selection_ranges({'start_seconds': 574, 'focus_ranges': []}, 1187)
     selected = choose_candidates([{'start_seconds': 550, 'end_seconds': 590}, {'start_seconds': 574, 'end_seconds': 620}], [], 1187, 30, 60, 8, focus)
