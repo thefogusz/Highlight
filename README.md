@@ -50,7 +50,7 @@ python -m venv .venv
 codex mcp add highlight -- (Resolve-Path .venv\Scripts\python.exe).Path -m highlight_mcp serve
 ```
 
-กรอก Gemini key ในช่องซ่อน → Load available models → เลือกโมเดล Gemini ที่รองรับวิดีโอ → Save settings เปิด Codex task ใหม่เพื่อโหลด MCP คำว่า `@Highlight` ขึ้นอยู่กับ host; พิมพ์ “ใช้ Highlight” ได้
+กรอก Gemini key → กด **บันทึกและพร้อมใช้งาน** ระบบคัดโมเดลที่รองรับและเลือกตัวแนะนำให้อัตโนมัติ หากอยากเปลี่ยน กด **ดูตัวเลือกโมเดล** เพื่อเลือกระหว่าง Flash กับ Pro ที่ key นี้มองเห็น; หากมีเพียงตัวเดียวจะไม่แสดงช่องเลือก เปิด Codex task ใหม่เพื่อโหลด MCP คำว่า `@Highlight` ขึ้นอยู่กับ host; พิมพ์ “ใช้ Highlight” ได้
 
 การโหลดรายชื่อโมเดลทดสอบสิทธิ์ key เท่านั้น ไม่ใช่ผลทดสอบวิเคราะห์วิดีโอ งานแรกดาวน์โหลด Whisper small อัตโนมัติและประมวลผล CPU อาจใช้เวลานาน เก็บงานที่ `%LOCALAPPDATA%\Highlight` ไม่ต้องเปิด terminal ค้างไว้
 
