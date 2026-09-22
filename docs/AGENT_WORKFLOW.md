@@ -32,3 +32,8 @@ Without media tools label outputs transcript-selected. Do not claim watched/hear
 ## Migration
 
 0.2 removes Gemini generation, credential access, model setup and google-genai/keyring dependencies. Saved credentials remain untouched. Historical results remain readable. New fingerprints use agent-v1. Reconnect hosts for the new catalog. Agent quota is tracked by the host, not MCP.
+
+
+## Context-first boundaries
+
+60 seconds is a ceiling, never a target. Do not fill the time or force every clip near one minute. Select a complete meaningful moment first: setup then punchline, question then answer, claim then response/consequence. Read 15–30 seconds of surrounding context for shortlisted boundaries. End before the next unfinished topic begins. A deliberate cliffhanger must be understandable and meaningful, not a dangling fragment. Supply opening_reason and ending_reason to highlight_render. The default 5-second minimum is technical, not an editorial target. If a complete exchange cannot fit, choose another moment. Transcript-based timing remains approximate; verify speech/reaction with actual media tools when available.

@@ -18,7 +18,13 @@ def dispatch(service, name, args):
         heatmap = []
     if name == 'highlight_transcript':
         rows = json.loads((root / 'transcript.json').read_text(encoding='utf-8'))
-        rows = [r for r in rows if any(r['end'] > f['start_seconds'] and r['start'] < f['end_seconds'] for f in ranges)]
+        reading_ranges = ranges
+        if 'context_start_seconds' in args or 'context_end_seconds' in args:
+            a, b = args.get('context_start_seconds'), args.get('context_end_seconds')
+            if not valid_range(a, b, job['duration']) or b-a > 120:
+                raise Failure('INVALID_RANGE', 'Supply both context times within source, at most 120 seconds apart.')
+            reading_ranges = [{'start_seconds': a, 'end_seconds': b}]
+        rows = [r for r in rows if any(r['end'] > f['start_seconds'] and r['start'] < f['end_seconds'] for f in reading_ranges)]
         # Bound text returned per call without losing or truncating transcript rows.
         offset = int(args.get('cursor') or 0) if str(args.get('cursor') or '0').isdigit() else -1
         if offset < 0 or offset > len(rows):

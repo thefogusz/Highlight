@@ -16,3 +16,8 @@ A YouTube link tagged Highlight means prepare highlights using defaults unless t
 Local code handles download, subtitles, Whisper, FFmpeg and validation without a chat model. Use the current economical Thai-capable host model for reading/ranking. Escalate only genuinely ambiguous context when host routing is available and authorized. MCP cannot change the host model or read its quota. Do not automatically spawn paid agents or switch to premium models. Preserve concise notes rather than rereading transcripts.
 
 Use highlight_revise for changes to rendered clips. Retry resumes local checkpoints. Heatmap is optional replay intensity, not viewer count or proof of humor.
+
+
+## Context-first boundaries
+
+60 seconds is a ceiling, never a target. Do not fill the time or force every clip near one minute. Select a complete meaningful moment first: setup then punchline, question then answer, claim then response/consequence. Read 15–30 seconds of surrounding context for shortlisted boundaries. End before the next unfinished topic begins. A deliberate cliffhanger must be understandable and meaningful, not a dangling fragment. Supply opening_reason and ending_reason to highlight_render. The default 5-second minimum is technical, not an editorial target. If a complete exchange cannot fit, choose another moment. Transcript-based timing remains approximate; verify speech/reaction with actual media tools when available.

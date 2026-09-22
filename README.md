@@ -22,7 +22,7 @@ python -m venv .venv
 
 `@Highlight https://www.youtube.com/watch?v=...`
 
-ค่าเริ่มต้นสูงสุด 8 คลิป 30–60 วินาที 16:9 เปลี่ยนเป็นแนวตั้งหรือขอ SRT ได้ ลิงก์ `t=574s` เลือกตั้งแต่ 9:34 จนจบ ส่ง `start_seconds: 0` เพื่อเลือกทั้งคลิป
+ค่าเริ่มต้นสูงสุด 8 คลิป 5–60 วินาที 16:9 เปลี่ยนเป็นแนวตั้งหรือขอ SRT ได้ ลิงก์ `t=574s` เลือกตั้งแต่ 9:34 จนจบ ส่ง `start_seconds: 0` เพื่อเลือกทั้งคลิป
 
 1. `highlight_create` เตรียมวิดีโอ ดึงซับไทยคนทำก่อน แล้วซับไทยอัตโนมัติ หากใช้ไม่ได้จึงเรียก Whisper
 2. `highlight_status` รอจน `awaiting_selection` จากนั้นหยุด poll
@@ -54,3 +54,8 @@ python scripts/check_design.py
 ```
 
 Tests ครอบคลุม MCP stdio, keyless preparation, pagination, validation, idempotency, MP4/SRT และ revision จริง คุณภาพมุกไทยยังต้องตรวจเนื้อหาจริง เอกสารรุ่น 0.1 ที่เหลือเป็นประวัติ ให้ยึด README และ AGENT_WORKFLOW รุ่น 0.2
+
+
+## Context-first boundaries
+
+60 seconds is a ceiling, never a target. Do not fill the time or force every clip near one minute. Select a complete meaningful moment first: setup then punchline, question then answer, claim then response/consequence. Read 15–30 seconds of surrounding context for shortlisted boundaries. End before the next unfinished topic begins. A deliberate cliffhanger must be understandable and meaningful, not a dangling fragment. Supply opening_reason and ending_reason to highlight_render. The default 5-second minimum is technical, not an editorial target. If a complete exchange cannot fit, choose another moment. Transcript-based timing remains approximate; verify speech/reaction with actual media tools when available.

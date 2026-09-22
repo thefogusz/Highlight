@@ -31,7 +31,7 @@ def test_keyless_prepare_select_render_and_idempotency(prepared):
     assert first['ok'] and first['next_cursor'] == '1'
     second = service.call('highlight_transcript', {'job_id':job,'cursor':'1'})
     assert second['segments'][0]['text'] == 'second' and second['next_cursor'] is None
-    request={'job_id':job,'clips':[{'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'dialogue','categories':['highlight']}]}
+    request={'job_id':job,'clips':[{'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}]}
     render=service.call('highlight_render',request)
     assert render['ok'],render
     assert service.call('highlight_render',request)['job_id']==render['job_id']
@@ -59,6 +59,15 @@ def test_prepared_retry_does_not_restart_and_cancel_blocks_selection(prepared):
     assert not service.call('highlight_transcript',{'job_id':job})['ok']
 
 
+def test_context_query_and_required_editorial_reasons(prepared):
+    service,job=prepared
+    page=service.call('highlight_transcript',{'job_id':job,'context_start_seconds':6,'context_end_seconds':12})
+    assert page['ok'] and [r['text'] for r in page['segments']]==['second']
+    assert not service.call('highlight_transcript',{'job_id':job,'context_start_seconds':6})['ok']
+    missing=service.call('highlight_render',{'job_id':job,'clips':[{'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'test','categories':['highlight']}]})
+    assert not missing['ok']
+
+
 def test_pagination_preserves_rows_with_soft_character_cap(prepared):
     service, job=prepared
     path=service.settings.root/job/'transcript.json'
@@ -79,6 +88,6 @@ def test_pagination_preserves_rows_with_soft_character_cap(prepared):
 @pytest.mark.parametrize('a,b,category', [(0,61,'highlight'),(10,20,'highlight'),(0,6,'most_replayed')])
 def test_invalid_agent_selections_never_queue(prepared,a,b,category):
     service,job=prepared
-    result=service.call('highlight_render',{'job_id':job,'clips':[{'start_seconds':a,'end_seconds':b,'title_th':'test','reason_th':'test','categories':[category]}]})
+    result=service.call('highlight_render',{'job_id':job,'clips':[{'start_seconds':a,'end_seconds':b,'title_th':'test','reason_th':'test','categories':[category],'opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}]})
     assert not result['ok']
     assert len(service.store.all())==1

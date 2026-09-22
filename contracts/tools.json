@@ -48,7 +48,7 @@
             "type": "number",
             "minimum": 5,
             "maximum": 60,
-            "default": 30
+            "default": 5
           },
           "max_duration_seconds": {
             "type": "number",
@@ -203,7 +203,7 @@
                     "type": "number",
                     "minimum": 5,
                     "maximum": 60,
-                    "default": 30
+                    "default": 5
                   },
                   "max_duration_seconds": {
                     "type": "number",
@@ -1936,7 +1936,7 @@
     },
     {
       "name": "highlight_transcript",
-      "description": "Read prepared transcript pages for the host agent to select highlights. No API key. Read all pages before final ranking.",
+      "description": "Read prepared transcript pages for the host agent to select highlights. No API key. Read all pages before final ranking. After shortlisting, use context_start_seconds/context_end_seconds to inspect surrounding boundary dialogue without rereading the full transcript.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1952,6 +1952,16 @@
             "minimum": 1,
             "maximum": 100,
             "default": 60
+          },
+          "context_start_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Optional boundary context query. Supply both times, at most 120 seconds apart. Does not expand allowed selection scope."
+          },
+          "context_end_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Optional boundary context query. Supply both times, at most 120 seconds apart. Does not expand allowed selection scope."
           }
         },
         "required": [
@@ -2117,7 +2127,7 @@
     },
     {
       "name": "highlight_render",
-      "description": "Render agent-selected separate clips, each at most 60 seconds. Requires prepared job awaiting_selection. Repeated identical selection reuses the render job.",
+      "description": "Render agent-selected separate clips, each at most 60 seconds. Requires prepared job awaiting_selection. Repeated identical selection reuses the render job. Prioritize complete meaning over duration. End after payoff/resolution, before a new unfinished thought; never pad to the maximum. Supply opening_reason and ending_reason after checking surrounding context.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2162,6 +2172,18 @@
                       "most_replayed"
                     ]
                   }
+                },
+                "opening_reason": {
+                  "type": "string",
+                  "minLength": 10,
+                  "maxLength": 600,
+                  "description": "Explain why a new viewer understands this opening and its references."
+                },
+                "ending_reason": {
+                  "type": "string",
+                  "minLength": 10,
+                  "maxLength": 600,
+                  "description": "Explain the completed answer, payoff or meaningful conclusion. Check following context; exclude unfinished new topics. 60 seconds is a ceiling, never a target."
                 }
               },
               "required": [
@@ -2169,7 +2191,9 @@
                 "end_seconds",
                 "title_th",
                 "reason_th",
-                "categories"
+                "categories",
+                "opening_reason",
+                "ending_reason"
               ],
               "additionalProperties": false
             }

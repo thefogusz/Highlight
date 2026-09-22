@@ -23,7 +23,7 @@
             "most_replayed"
           ],
           "target_clips": 8,
-          "min_duration_seconds": 30,
+          "min_duration_seconds": 5,
           "max_duration_seconds": 60,
           "aspect": "16:9",
           "captions": "off",
@@ -230,7 +230,9 @@
             "reason_th": "sample",
             "categories": [
               "highlight"
-            ]
+            ],
+            "opening_reason": "The question establishes the topic.",
+            "ending_reason": "The answer resolves the question before the next topic."
           }
         ]
       },
