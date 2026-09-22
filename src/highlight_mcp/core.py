@@ -198,8 +198,10 @@ class Service:
             result = {**base, **value}
             Draft202012Validator(CATALOG[name]["outputSchema"]).validate(result)
             return result
-        except ValidationError:
-            failure = Failure("INVALID_RANGE", "Arguments or response did not match the Highlight contract.")
+        except ValidationError as exc:
+            # Return schema locations, never submitted values or credential contents.
+            path = '.'.join(str(x) for x in exc.absolute_path) or 'root'
+            failure = Failure("INVALID_RANGE", f"Contract validation failed at {path} ({exc.validator}). Check the tool schema and repair only this field.", "Preserve URL, intent, aspect, captions, durations and research. Do not remove user options to make validation pass.")
         except Failure as exc:
             failure = exc
         except Exception:

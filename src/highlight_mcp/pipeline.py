@@ -55,7 +55,21 @@ def selection_ranges(opts, duration):
     return ranges
 
 
-def command(args, check, timeout=3600):
+def youtube_failure(stderr):
+    """Return safe categories, never raw stderr containing URLs or credentials."""
+    text = stderr.lower()
+    if 'sign in to confirm' in text or 'not a bot' in text:
+        return 'YouTube requires sign-in verification for this request. Do not retry unchanged or request an MP4 by default. Explain the sign-in requirement; authenticated downloader access needs explicit user authorization.', False
+    if any(x in text for x in ('private video', 'members-only', 'not available in your country', 'video unavailable', 'removed by')):
+        return 'YouTube source is restricted or unavailable. Check video access; do not promise that uploading an MP4 will immediately produce clips.', False
+    if any(x in text for x in ('429', 'too many requests')):
+        return 'YouTube rate-limited this request. Stop repeated requests and retry later; do not ask for an MP4 by default.', False
+    if any(x in text for x in ('timed out', 'temporary failure', 'connection reset', 'http error 503', 'http error 502')):
+        return 'Temporary YouTube connection failure. One automatic retry was attempted; preserve the existing job and user options.', True
+    return 'YouTube download failed for an unclassified reason. Inspect the downloader installation and source access before asking the user for a file.', False
+
+
+def command(args, check, timeout=3600, _retried=False):
     import tempfile
     with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         p = subprocess.Popen([str(a) for a in args], stdout=out, stderr=err,
@@ -68,7 +82,16 @@ def command(args, check, timeout=3600):
                     raise Failure("LIMIT_EXCEEDED", "Local operation timed out.")
                 time.sleep(.25)
             if p.returncode:
-                raise Failure("RENDER_FAILED", "Media operation failed; check source availability and installed media tools.")
+                err.seek(0)
+                if 'yt_dlp' in [str(a) for a in args]:
+                    message, transient = youtube_failure(err.read().decode('utf-8', errors='replace'))
+                    if transient and not _retried:
+                        for _ in range(8):
+                            check()
+                            time.sleep(.25)
+                        return command(args, check, timeout, _retried=True)
+                    raise Failure("RENDER_FAILED", message)
+                raise Failure("RENDER_FAILED", "FFmpeg/media operation failed; inspect source integrity and installed media tools.")
             out.seek(0)
             return out.read()
         finally:
