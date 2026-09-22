@@ -73,7 +73,15 @@ def test_highlights_default_to_one_minute_maximum(service):
     result = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk'})
     assert result['resolved_options']['max_duration_seconds'] == 60
     result = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk', 'max_duration_seconds': 61})
-    assert not result['ok']
+    assert result['ok'] and result['resolved_options']['max_duration_seconds'] == 61
+
+
+def test_five_minute_ceiling_does_not_change_next_job_default(service):
+    custom=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk','max_duration_seconds':300})
+    normal=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})
+    assert custom['ok'] and custom['resolved_options']['max_duration_seconds']==300
+    assert normal['ok'] and normal['resolved_options']['max_duration_seconds']==60
+    assert custom['job_id'] != normal['job_id']
 
 
 def test_cancel_is_idempotent(service):

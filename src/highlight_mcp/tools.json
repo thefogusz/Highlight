@@ -47,13 +47,13 @@
           "min_duration_seconds": {
             "type": "number",
             "minimum": 5,
-            "maximum": 60,
+            "maximum": 21600,
             "default": 5
           },
           "max_duration_seconds": {
             "type": "number",
             "minimum": 5,
-            "maximum": 60,
+            "maximum": 21600,
             "default": 60
           },
           "aspect": {
@@ -202,13 +202,13 @@
                   "min_duration_seconds": {
                     "type": "number",
                     "minimum": 5,
-                    "maximum": 60,
+                    "maximum": 21600,
                     "default": 5
                   },
                   "max_duration_seconds": {
                     "type": "number",
                     "minimum": 5,
-                    "maximum": 60,
+                    "maximum": 21600,
                     "default": 60
                   },
                   "aspect": {
@@ -1095,6 +1095,12 @@
           "end_seconds": {
             "type": "number",
             "minimum": 0
+          },
+          "max_duration_seconds": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 21600,
+            "description": "Explicit user override of the clip ceiling for this revision. Otherwise inherit the job limit."
           }
         },
         "required": [
@@ -2127,7 +2133,7 @@
     },
     {
       "name": "highlight_render",
-      "description": "Render agent-selected separate clips, each at most 60 seconds. Requires prepared job awaiting_selection. Repeated identical selection reuses the render job. Prioritize complete meaning over duration. End after payoff/resolution, before a new unfinished thought; never pad to the maximum. Supply opening_reason and ending_reason after checking surrounding context.",
+      "description": "Render agent-selected separate clips, each within the requested maximum (default 60 seconds). Requires prepared job awaiting_selection. Repeated identical selection reuses the render job. Prioritize complete meaning over duration. End after payoff/resolution, before a new unfinished thought; never pad to the maximum. Supply opening_reason and ending_reason after checking surrounding context.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2183,7 +2189,7 @@
                   "type": "string",
                   "minLength": 10,
                   "maxLength": 600,
-                  "description": "Explain the completed answer, payoff or meaningful conclusion. Check following context; exclude unfinished new topics. 60 seconds is a ceiling, never a target."
+                  "description": "Explain the completed answer/payoff/conclusion. Exclude unfinished new topics. Requested maximum is a ceiling, never a target."
                 }
               },
               "required": [

@@ -90,9 +90,9 @@ def probe(settings, path, check):
     return json.loads(command([settings.binary("ffprobe"), "-v", "error", "-show_format", "-show_streams", "-of", "json", path], check, 60))
 
 
-def render_clip(settings, source, output, start, end, aspect, check):
-    if not valid_range(start, end, end) or end - start > 60:
-        raise Failure("INVALID_RANGE", "Each highlight must be at most 60 seconds. Re-select a shorter complete moment; do not concatenate highlights.")
+def render_clip(settings, source, output, start, end, aspect, check, maximum=60):
+    if not valid_range(start, end, end) or end - start > maximum:
+        raise Failure("INVALID_RANGE", f"Each highlight must be at most {maximum} seconds. Re-select a complete moment within the requested limit.")
     info = probe(settings, source, check)
     if not valid_range(start, end, float(info["format"]["duration"])):
         raise Failure("INVALID_RANGE", "Clip lies outside the source.")
@@ -101,7 +101,7 @@ def render_clip(settings, source, output, start, end, aspect, check):
              "-map", "0:v:0", "-map", "0:a:0?", "-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1",
              "-c:v", "libx264", "-preset", "fast", "-crf", "21", "-c:a", "aac", "-movflags", "+faststart", output], check)
     result = probe(settings, output, check)
-    if float(result['format']['duration']) > 60 or abs(float(result["format"]["duration"]) - (end-start)) > .3:
+    if float(result['format']['duration']) > maximum or abs(float(result["format"]["duration"]) - (end-start)) > .3:
         raise Failure("RENDER_FAILED", "Rendered duration failed verification.")
     command([settings.binary("ffmpeg"), "-v", "error", "-xerror", "-i", output, "-f", "null", "-"], check)
 
@@ -116,7 +116,7 @@ def choose_candidates(proposals, heatmap, duration, minimum, maximum, count, foc
     for p in proposals:
         validate_proposal(p, duration)
         a, b = p["start_seconds"], p["end_seconds"]
-        if not minimum <= b-a <= min(maximum, 60):
+        if not minimum <= b-a <= maximum:
             continue
         if focus and not any(r["start_seconds"] <= a and b <= r["end_seconds"] for r in focus):
             continue
@@ -139,7 +139,6 @@ def run(settings, store, job, check):
     root = settings.root / job["id"]
     root.mkdir(exist_ok=True)
     opts = {**job["request"]["options"]}
-    opts['max_duration_seconds'] = min(opts['max_duration_seconds'], 60)
     opts['min_duration_seconds'] = min(opts['min_duration_seconds'], opts['max_duration_seconds'])
     def stage(name):
         check()
@@ -230,7 +229,7 @@ def run(settings, store, job, check):
     clips = []
     for i, p in enumerate(selected):
         output = root / f"clip_{i+1}.mp4"
-        render_clip(settings, source, output, p["start_seconds"], p["end_seconds"], opts["aspect"], check)
+        render_clip(settings, source, output, p["start_seconds"], p["end_seconds"], opts["aspect"], check, maximum=opts["max_duration_seconds"])
         artifacts = [artifact(output, job["id"], "video", "video/mp4")]
         if opts["captions"] == "srt":
             def stamp(seconds):

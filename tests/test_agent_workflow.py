@@ -68,6 +68,25 @@ def test_context_query_and_required_editorial_reasons(prepared):
     assert not missing['ok']
 
 
+def test_user_ceiling_applies_to_selection_and_revision(prepared):
+    service,job=prepared
+    request=service.store.get(job)['request']
+    request['options']['max_duration_seconds']=300
+    service.store.update(job,request=request,duration=400)
+    clip={'start_seconds':0,'end_seconds':180,'title_th':'complete exchange','reason_th':'complete topic','categories':['highlight'],'opening_reason':'The question establishes the topic.','ending_reason':'The response completes the topic.'}
+    result=service.call('highlight_render',{'job_id':job,'clips':[clip]})
+    assert result['ok'],result
+    rendered=service.store.get(result['job_id'])
+    assert rendered['request']['options']['max_duration_seconds']==300
+    service.store.update(result['job_id'],state='completed',duration=400,source_job=job,clips=[{**clip,'clip_id':'clip_1','revision':1}])
+    revision=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'start_seconds':0,'end_seconds':200})
+    assert revision['ok'],revision
+    invalid=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'start_seconds':0,'end_seconds':301})
+    assert not invalid['ok']
+    override=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'start_seconds':0,'end_seconds':301,'max_duration_seconds':360})
+    assert override['ok'],override
+
+
 def test_pagination_preserves_rows_with_soft_character_cap(prepared):
     service, job=prepared
     path=service.settings.root/job/'transcript.json'

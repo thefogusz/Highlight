@@ -48,8 +48,8 @@ def dispatch(service, name, args):
         raise Failure('INVALID_RANGE', 'Selection exceeds requested target_clips.')
     for clip in args['clips']:
         a, b = clip['start_seconds'], clip['end_seconds']
-        if not valid_range(a, b, job['duration']) or not opts['min_duration_seconds'] <= b-a <= min(60, opts['max_duration_seconds']):
-            raise Failure('INVALID_RANGE', 'Clip must respect requested duration and source boundaries, at most 60 seconds.')
+        if not valid_range(a, b, job['duration']) or not opts['min_duration_seconds'] <= b-a <= opts['max_duration_seconds']:
+            raise Failure('INVALID_RANGE', 'Clip must respect requested duration and source boundaries, within the configured maximum.')
         if not any(r['start_seconds'] <= a < b <= r['end_seconds'] for r in ranges):
             raise Failure('INVALID_RANGE', 'Clip lies outside requested scope.')
         if any(max(a, c['start_seconds']) < min(b, c['end_seconds']) for c in clips):

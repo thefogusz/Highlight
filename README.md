@@ -1,6 +1,6 @@
 # Highlight MCP 0.2 — ไม่ต้องมี API key
 
-วางลิงก์ YouTube ให้ Codex, Claude หรือ agent ที่รองรับ MCP แล้วได้ MP4 แยกคลิปละไม่เกิน 60 วินาที MCP เตรียมข้อมูลและตัดไฟล์ ส่วนโมเดลในแชทวิเคราะห์ ไม่มีการเรียก Gemini ใน worker
+วางลิงก์ YouTube ให้ Codex, Claude หรือ agent ที่รองรับ MCP แล้วได้ MP4 แยกคลิปละไม่เกิน 60 วินาทีโดยค่าเริ่มต้น (ปรับได้ตามผู้ใช้) MCP เตรียมข้อมูลและตัดไฟล์ ส่วนโมเดลในแชทวิเคราะห์ ไม่มีการเรียก Gemini ใน worker
 
 ## ติดตั้ง
 
@@ -58,4 +58,6 @@ Tests ครอบคลุม MCP stdio, keyless preparation, pagination, valid
 
 ## Context-first boundaries
 
-60 seconds is a ceiling, never a target. Do not fill the time or force every clip near one minute. Select a complete meaningful moment first: setup then punchline, question then answer, claim then response/consequence. Read 15–30 seconds of surrounding context for shortlisted boundaries. End before the next unfinished topic begins. A deliberate cliffhanger must be understandable and meaningful, not a dangling fragment. Supply opening_reason and ending_reason to highlight_render. The default 5-second minimum is technical, not an editorial target. If a complete exchange cannot fit, choose another moment. Transcript-based timing remains approximate; verify speech/reaction with actual media tools when available.
+The requested maximum (default 60 seconds) is a ceiling, never a target. Do not fill the time or force every clip near one minute. Select a complete meaningful moment first: setup then punchline, question then answer, claim then response/consequence. Read 15–30 seconds of surrounding context for shortlisted boundaries. End before the next unfinished topic begins. A deliberate cliffhanger must be understandable and meaningful, not a dangling fragment. Supply opening_reason and ending_reason to highlight_render. The default 5-second minimum is technical, not an editorial target. If a complete exchange cannot fit, choose another moment. Transcript-based timing remains approximate; verify speech/reaction with actual media tools when available.
+
+ผู้ใช้ขอ “คลิปละไม่เกิน 5 นาที” ให้ agent ส่ง `max_duration_seconds: 300` โดยไม่เปลี่ยนค่าเริ่มต้นของงานอื่น `highlight_revise` รับค่า override นี้ได้เช่นกัน หากไม่ส่งจะใช้เพดานของงานเดิม ทุกช่วงยังต้องอยู่ภายในวิดีโอต้นฉบับและจบใจความ ไม่ใช่เติมให้ครบเวลาที่ตั้งไว้

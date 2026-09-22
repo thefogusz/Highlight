@@ -68,8 +68,8 @@ def test_long_cached_clip_cannot_render(tmp_path):
         render_clip(Settings(tmp_path), tmp_path / 'unused.mp4', tmp_path / 'out.mp4', 0, 61, '16:9', lambda: None)
 
 
-def test_old_options_cannot_select_long_highlight():
-    assert choose_candidates([{'start_seconds': 0, 'end_seconds': 90}], [], 120, 5, 120, 8, []) == []
+def test_explicit_options_allow_longer_highlight():
+    assert len(choose_candidates([{'start_seconds': 0, 'end_seconds': 90}], [], 120, 5, 120, 8, [])) == 1
 
 
 def test_real_media_render(tmp_path):
