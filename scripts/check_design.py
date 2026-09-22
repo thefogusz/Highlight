@@ -59,7 +59,7 @@ def no_secret_fields(schema) -> bool:
 def main() -> None:
     tools = read("contracts/tools.json")["tools"]
     by_name = {tool["name"]: tool for tool in tools}
-    check(len(tools) == len(by_name) == 8, "Expected eight unique tools")
+    check(len(tools) == len(by_name) == 10, "Expected ten unique tools")
     for tool in tools:
         for side in ("inputSchema", "outputSchema"):
             Draft202012Validator.check_schema(tool[side])
@@ -71,7 +71,7 @@ def main() -> None:
                 validate(prop, prop["default"])
         validate(tool["outputSchema"], read("examples/error.json"))
         check(tool["annotations"]["readOnlyHint"] == (tool["name"] in {
-            "highlight_status", "highlight_results", "highlight_settings", "highlight_jobs"
+            "highlight_status", "highlight_results", "highlight_settings", "highlight_jobs", "highlight_transcript"
         }), "Read-only annotation mismatch")
 
     calls = read("examples/calls.json")["calls"]
@@ -132,7 +132,7 @@ def main() -> None:
     codex = config["mcp_servers"]["highlight"]
     generic = read("examples/mcp.config.json")["mcpServers"]["highlight"]
     check(codex["args"] == generic["args"] == ["-m", "highlight_mcp", "serve"], "Host launch template drift")
-    check(codex["env_vars"] == ["GEMINI_API_KEY"], "Missing key environment allowlist")
+    check(not codex.get("env_vars"), "No provider key should be required")
     check("GEMINI_API_KEY" not in generic.get("env", {}), "Generic template embeds key")
 
     for path in [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]:
@@ -143,7 +143,7 @@ def main() -> None:
             dest = (path.parent / target.split("#")[0]).resolve()
             check(dest.is_relative_to(ROOT) and dest.exists(), f"Broken local link: {path.name} -> {target}")
 
-    print(f"PASS: {CHECKS} offline design checks; 8 tool schemas, fixtures, states, configs and local links.")
+    print(f"PASS: {CHECKS} offline design checks; 10 tool schemas, fixtures, states, configs and local links.")
     print("NOT TESTED: MCP runtime, host connection, YouTube download, provider calls, rendering, Thai editorial quality.")
 
 

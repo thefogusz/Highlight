@@ -14,8 +14,8 @@ def main():
         from .worker import worker
         worker()
     elif command == "setup":
-        from .setup_ui import setup
-        setup()
+        from .core import Settings
+        print(json.dumps(Settings().public(), indent=2))
     else:
         from .core import Settings
         print(json.dumps(Settings().public(), indent=2))

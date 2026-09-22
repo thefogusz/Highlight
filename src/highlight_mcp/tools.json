@@ -2,7 +2,7 @@
   "tools": [
     {
       "name": "highlight_create",
-      "description": "Create Thai highlight clips from one public YouTube URL. URL alone is enough; defaults auto-analyze and render. Returns job_id immediately. No API key argument. Poll status; do not resubmit to check progress.",
+      "description": "Prepare YouTube source and Thai transcript locally. No API key. At awaiting_selection the host agent must read highlight_transcript and submit highlight_render; preparation alone does not produce clips.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -157,7 +157,8 @@
                   "completed",
                   "partial",
                   "failed",
-                  "cancelled"
+                  "cancelled",
+                  "awaiting_selection"
                 ]
               },
               "reused": {
@@ -432,7 +433,8 @@
                   "completed",
                   "partial",
                   "failed",
-                  "cancelled"
+                  "cancelled",
+                  "awaiting_selection"
                 ]
               },
               "stage": {
@@ -446,7 +448,8 @@
                       "discover",
                       "inspect",
                       "render",
-                      "verify"
+                      "verify",
+                      "select"
                     ]
                   },
                   {
@@ -765,7 +768,8 @@
                   "completed",
                   "partial",
                   "failed",
-                  "cancelled"
+                  "cancelled",
+                  "awaiting_selection"
                 ]
               },
               "clips": {
@@ -1146,7 +1150,8 @@
                   "completed",
                   "partial",
                   "failed",
-                  "cancelled"
+                  "cancelled",
+                  "awaiting_selection"
                 ]
               },
               "reused": {
@@ -1301,7 +1306,8 @@
                   "completed",
                   "partial",
                   "failed",
-                  "cancelled"
+                  "cancelled",
+                  "awaiting_selection"
                 ]
               },
               "cancel_requested": {
@@ -1454,7 +1460,8 @@
                   "completed",
                   "partial",
                   "failed",
-                  "cancelled"
+                  "cancelled",
+                  "awaiting_selection"
                 ]
               },
               "reused": {
@@ -1557,7 +1564,7 @@
     },
     {
       "name": "highlight_settings",
-      "description": "Read sanitized settings/readiness. Never returns API key. Configure secrets outside chat via environment or local wizard. No provider test is performed.",
+      "description": "Check local FFmpeg readiness. No provider key or remote model configuration is needed.",
       "inputSchema": {
         "type": "object",
         "properties": {},
@@ -1586,7 +1593,7 @@
                 "const": true
               },
               "provider": {
-                "const": "gemini"
+                "const": "agent"
               },
               "model": {
                 "anyOf": [
@@ -1798,7 +1805,8 @@
                         "completed",
                         "partial",
                         "failed",
-                        "cancelled"
+                        "cancelled",
+                        "awaiting_selection"
                       ]
                     },
                     "created_at": {
@@ -1921,6 +1929,395 @@
       },
       "annotations": {
         "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_transcript",
+      "description": "Read prepared transcript pages for the host agent to select highlights. No API key. Read all pages before final ranking.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^job_[a-f0-9]{32}$"
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 60
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^job_[a-f0-9]{32}$"
+              },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source_duration_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "source_path": {
+                "type": "string"
+              },
+              "transcript_source": {
+                "type": "string"
+              },
+              "focus_ranges": {
+                "type": "array"
+              },
+              "heatmap": {
+                "type": "array"
+              },
+              "options": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "ok",
+              "schema_version",
+              "warnings",
+              "next_action",
+              "job_id",
+              "segments",
+              "next_cursor",
+              "source_duration_seconds",
+              "source_path",
+              "transcript_source",
+              "focus_ranges",
+              "heatmap",
+              "options"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_render",
+      "description": "Render agent-selected separate clips, each at most 60 seconds. Requires prepared job awaiting_selection. Repeated identical selection reuses the render job.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^job_[a-f0-9]{32}$"
+          },
+          "clips": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "start_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "end_seconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "title_th": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "reason_th": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "categories": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "highlight",
+                      "important",
+                      "funny",
+                      "most_replayed"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "start_seconds",
+                "end_seconds",
+                "title_th",
+                "reason_th",
+                "categories"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "job_id",
+          "clips"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^job_[a-f0-9]{32}$"
+              },
+              "parent_job_id": {
+                "type": "string",
+                "pattern": "^job_[a-f0-9]{32}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "running",
+                  "waiting_for_configuration",
+                  "waiting_for_budget",
+                  "interrupted",
+                  "completed",
+                  "partial",
+                  "failed",
+                  "cancelled",
+                  "awaiting_selection"
+                ]
+              },
+              "reused": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ok",
+              "schema_version",
+              "warnings",
+              "next_action",
+              "job_id",
+              "parent_job_id",
+              "state",
+              "reused"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false

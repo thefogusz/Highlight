@@ -5,13 +5,13 @@ description: Review Thai talk-show highlight clips produced by Highlight MCP for
 
 # Thai clip review
 
-Help the user receive understandable, well-cut Thai highlights. This skill guides the host agent; it does not modify the Gemini pipeline, add whole-episode memory, or guarantee humor quality.
+Help the user receive understandable, well-cut Thai highlights. This skill guides the host agent; it does not guarantee humor quality.
 
 ## Work with the existing job
 
-Discover Highlight tools when needed. Use `highlight_jobs` to recover a job, `highlight_status` to read its current state, and `highlight_results` for actual clips. Preserve the job ID rather than submitting the URL repeatedly. If `highlight_create` returns `reused: true`, distinguish a historical failure from a freshly observed error. Honor an explicit request to retry using `highlight_retry`; do not silently retry uncertain provider outcomes or change the model to spend more.
+No Gemini API key is required in v0.2. At awaiting_selection read highlight_transcript pages once, keep a compact shortlist, then call highlight_render. Do not poll while waiting for agent selection. Never ask what to do when the user tags Highlight with a video link: prepare highlights using defaults unless they specify other options. Discover Highlight tools when needed. Use `highlight_jobs` to recover a job, `highlight_status` to read its current state, and `highlight_results` for actual clips. Preserve the job ID rather than submitting the URL repeatedly. If `highlight_create` returns `reused: true`, distinguish a historical failure from a freshly observed error. Honor an explicit request to retry using `highlight_retry`; do not silently retry uncertain provider outcomes or change the model to spend more.
 
-Open `dashboard_path` in the host's HTML preview when available. Otherwise provide a short Thai status summary. The 30-call meter is a local job limit, not Google account quota, monetary budget, or percent complete. Unknown and partially reported usage stays unknown; count this task's agent usage separately from Gemini usage inside Highlight.
+Open `dashboard_path` in the host's HTML preview when available. Otherwise provide a short Thai status summary. Current jobs use the host agent subscription; MCP cannot read host quota. Historical provider usage is not current agent usage.
 
 ## Inspect the evidence available
 

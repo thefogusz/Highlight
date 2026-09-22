@@ -27,7 +27,7 @@ def record_usage(job, metadata, model):
 
 
 def summarize(job):
-    usage = job.get('usage', {})
+    usage = job.get('usage') or {}
     calls = job.get('provider_calls', 0)
     reported = usage.get('reported_calls', 0)
     return {**{k: usage.get(k) for k in ('input_tokens', 'output_tokens', 'thinking_tokens', 'total_tokens')},
@@ -42,7 +42,7 @@ def render_dashboard(root, job):
     states = {'queued': 'รอเริ่มงาน', 'running': 'กำลังทำงาน', 'completed': 'เสร็จแล้ว',
               'partial': 'ได้คลิปบางส่วน', 'failed': 'งานหยุด — ต้องตรวจสอบ',
               'cancelled': 'ยกเลิกแล้ว', 'interrupted': 'งานสะดุด',
-              'waiting_for_configuration': 'รอตั้งค่า API', 'waiting_for_budget': 'รอปรับงบ'}
+              'waiting_for_configuration': 'รอติดตั้งเครื่องมือ', 'waiting_for_budget': 'รอปรับงบ'}
     stages = {'ingest': 'เตรียมวิดีโอ', 'transcribe': 'ถอดเสียงในเครื่อง',
               'discover': 'หาช่วงน่าสนใจ', 'inspect': 'ตรวจภาพและเสียง',
               'render': 'ตัดคลิป', 'verify': 'ตรวจไฟล์', 'preflight': 'ตรวจความพร้อม'}
@@ -60,7 +60,7 @@ def render_dashboard(root, job):
     error_message = ('งานเดิมหยุดเพราะข้อจำกัดความยาว — อัปเดตแล้ว ให้สั่งลองงานเดิมอีกครั้ง'
                      if 'two hours' in error else 'งานหยุดก่อนเสร็จ ให้ agent ตรวจสาเหตุด้านล่าง')
     notice = (f'<p class="notice">{error_message}</p><details><summary>รายละเอียดสำหรับตรวจสอบ</summary><p>{esc(error)}</p></details>'
-              if error else '<p class="muted">ถอดเสียงและตัดไฟล์ในเครื่องไม่ใช้โทเคน Gemini</p>')
+              if error else '<p class="muted">ถอดเสียงและตัดไฟล์ในเครื่อง ไม่เรียก API โมเดล</p>')
     updated = datetime.now().astimezone().strftime('%d/%m/%Y %H:%M:%S %Z')
     cards = ''.join(f'<div class="metric"><span>{title}</span><strong>{number(data[key])}</strong></div>'
                     for title, key in [('โทเคนรวมที่รายงาน', 'total_tokens'), ('ข้อมูลส่งเข้า', 'input_tokens'),
@@ -95,6 +95,9 @@ h2{{font-size:20px;margin:0 0 8px}}.badge{{background:#363049;color:#ded0ff;padd
 {notice}
 <footer>โมเดลที่รายงานล่าสุด: {esc(data['last_model'] or 'ยังไม่มีรายงาน')}<br>อัปเดตข้อมูล: {esc(updated)}<br>
 {esc(job['id'])} · หน้านี้อ่านไฟล์ซ้ำทุก 5 วินาที ข้อมูลเปลี่ยนเมื่อ worker หรือ agent บันทึกสถานะ</footer></main></html>'''
+    if not job.get('usage'):
+        state = {'awaiting_selection': 'รอ Agent เลือกช่วง', 'queued': 'รอทำงาน', 'running': 'กำลังทำงาน', 'completed': 'เสร็จแล้ว', 'partial': 'สำเร็จบางส่วน', 'failed': 'ไม่สำเร็จ', 'cancelled': 'ยกเลิก'}.get(job.get('state'), job.get('state'))
+        html = f'''<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="5"><title>Highlight</title><style>body{{background:#12131a;color:#f4f3f8;font:18px/1.7 'Segoe UI',sans-serif;max-width:720px;margin:40px auto;padding:24px}}section{{background:#1d1e29;padding:24px;border-radius:16px}}small{{color:#b5b6c7}}</style><h1>Highlight</h1><section><h2>{esc(state)}</h2><p>ได้คลิปแล้ว {len(job.get('clips', []))} คลิป</p>{asr}<p>ใช้ Agent ในแชทเลือกช่วง · ไม่ต้องมี API key</p><small>โควตาและค่าใช้จ่าย Agent ดูจากแอปที่ใช้ MCP อ่านยอดคงเหลือไม่ได้</small>{notice}</section></html>'''
     folder = root / job['id']
     folder.mkdir(exist_ok=True)
     path = folder / 'dashboard.html'

@@ -9,7 +9,8 @@
     "completed",
     "partial",
     "failed",
-    "cancelled"
+    "cancelled",
+    "awaiting_selection"
   ],
   "terminal": [
     "completed",
@@ -29,7 +30,8 @@
       "cancelled",
       "waiting_for_configuration",
       "waiting_for_budget",
-      "interrupted"
+      "interrupted",
+      "awaiting_selection"
     ],
     "waiting_for_configuration": [
       "queued",
@@ -52,7 +54,11 @@
     "cancelled": [
       "queued"
     ],
-    "completed": []
+    "completed": [],
+    "awaiting_selection": [
+      "cancelled",
+      "queued"
+    ]
   },
   "retryable": [
     "failed",

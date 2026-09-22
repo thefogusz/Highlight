@@ -49,5 +49,5 @@ def test_dashboard_escapes_untrusted_values_and_labels_unknown(tmp_path):
                             'error': '<script>alert(1)</script>', 'provider_calls': 2})
     html = path.read_text(encoding='utf-8')
     assert '<script>' not in html
-    assert 'ยังไม่ทราบ' in html
-    assert 'โควตาฟรี' in html
+    assert 'MCP อ่านยอดคงเหลือไม่ได้' in html
+    assert 'ไม่ต้องมี API key' in html

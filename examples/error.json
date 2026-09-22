@@ -5,7 +5,7 @@
   "next_action": "Configure provider credentials locally.",
   "error": {
     "code": "CONFIG_REQUIRED",
-    "message": "Gemini key is not configured.",
+    "message": "FFmpeg is not installed.",
     "retryable": false,
     "action": "Use host environment or local settings wizard."
   }

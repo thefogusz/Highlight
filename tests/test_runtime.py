@@ -47,7 +47,7 @@ def test_discover_status_does_not_claim_video_inspected(service):
 
 def test_missing_key_is_actionable_and_durable(service):
     result = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
-    assert result["ok"] and result["state"] == "waiting_for_configuration"
+    assert result["ok"] and result["state"] == "queued"
     assert Service(service.settings, launch=False).call("highlight_jobs", {})["jobs"][0]["job_id"] == result["job_id"]
 
 
@@ -92,7 +92,7 @@ def test_extra_secret_input_not_echoed(service):
 def test_setting_key_not_returned(service, monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "SECRET_TEST_VALUE")
     result = service.call("highlight_settings", {})
-    assert result["key_configured"]
+    assert not result["key_configured"]
     assert "SECRET_TEST_VALUE" not in json.dumps(result)
 
 

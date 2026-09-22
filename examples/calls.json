@@ -161,18 +161,15 @@
         "schema_version": "1.0",
         "ok": true,
         "warnings": [],
-        "next_action": "Configure credentials locally.",
-        "provider": "gemini",
+        "next_action": "No API key required.",
+        "provider": "agent",
         "model": null,
         "key_configured": false,
         "key_source": "none",
         "key_status": "unknown",
         "config_version": "fixture_1",
-        "ready": false,
-        "missing": [
-          "GEMINI_API_KEY",
-          "model"
-        ]
+        "ready": true,
+        "missing": []
       }
     },
     {
@@ -192,6 +189,60 @@
           }
         ],
         "next_cursor": null
+      }
+    },
+    {
+      "tool": "highlight_transcript",
+      "arguments": {
+        "job_id": "job_11111111111111111111111111111111"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "Read and select",
+        "job_id": "job_11111111111111111111111111111111",
+        "segments": [
+          {
+            "start": 0,
+            "end": 30,
+            "text": "sample"
+          }
+        ],
+        "next_cursor": null,
+        "source_duration_seconds": 120,
+        "source_path": "C:/Highlight/source.mp4",
+        "transcript_source": "youtube_auto_th",
+        "focus_ranges": [],
+        "heatmap": [],
+        "options": {}
+      }
+    },
+    {
+      "tool": "highlight_render",
+      "arguments": {
+        "job_id": "job_11111111111111111111111111111111",
+        "clips": [
+          {
+            "start_seconds": 0,
+            "end_seconds": 30,
+            "title_th": "sample",
+            "reason_th": "sample",
+            "categories": [
+              "highlight"
+            ]
+          }
+        ]
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "Read and select",
+        "job_id": "job_22222222222222222222222222222222",
+        "parent_job_id": "job_11111111111111111111111111111111",
+        "state": "queued",
+        "reused": false
       }
     }
   ]

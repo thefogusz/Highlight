@@ -18,15 +18,11 @@ def test_stdio_handshake_and_tools(tmp_path):
                 initialized = await session.initialize()
                 assert initialized.serverInfo.icons[0].src.startswith('data:image/svg+xml;base64,')
                 catalog = await session.list_tools()
-                assert len(catalog.tools) == 8
+                assert len(catalog.tools) == 10
                 assert all(tool.icons == initialized.serverInfo.icons for tool in catalog.tools)
                 settings = await session.call_tool("highlight_settings", {})
                 assert not settings.isError
                 assert not settings.structuredContent["key_configured"]
-                created = await session.call_tool("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
-                assert created.structuredContent["state"] == "waiting_for_configuration"
-                result = await session.call_tool("highlight_results", {"job_id": created.structuredContent["job_id"]})
-                assert result.structuredContent["ok"]
                 invalid = await session.call_tool("highlight_create", {"url": "http://localhost/private", "api_key": "do-not-echo"})
                 assert invalid.isError and "do-not-echo" not in str(invalid)
     anyio.run(exercise)

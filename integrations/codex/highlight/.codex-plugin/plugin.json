@@ -1,18 +1,23 @@
 {
   "name": "highlight",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Find Thai YouTube highlights and render video clips with Highlight MCP.",
-  "author": {"name": "thefogusz"},
+  "author": {
+    "name": "thefogusz"
+  },
   "repository": "https://github.com/thefogusz/Highlight",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Highlight",
     "shortDescription": "ตัดไฮไลต์จากลิงก์ YouTube",
-    "longDescription": "ค้นหาช่วงตลก ประเด็นสำคัญ และช่วงดูซ้ำจากวิดีโอภาษาไทย พร้อมตัด MP4 บนเครื่อง ใช้ Gemini key ที่ตั้งค่าไว้ใน Highlight Settings",
+    "longDescription": "Agent เลือกไฮไลต์จากซับไทย แล้วตัด MP4 บนเครื่อง ไม่ต้องกรอก API key รองรับ Codex และ Claude ผ่าน MCP",
     "developerName": "thefogusz",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": ["ตัดช่วงตลกและประเด็นสำคัญจากลิงก์ YouTube นี้", "ตรวจว่า Highlight พร้อมใช้งานไหม"],
+    "defaultPrompt": [
+      "ตัดช่วงตลกและประเด็นสำคัญจากลิงก์ YouTube นี้",
+      "ตรวจว่า Highlight พร้อมใช้งานไหม"
+    ],
     "brandColor": "#8B5CF6",
     "composerIcon": "./assets/highlight.png",
     "logo": "./assets/highlight.png"

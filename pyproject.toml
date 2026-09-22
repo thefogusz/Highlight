@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "highlight-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Local Thai YouTube highlight workflow for MCP agents"
 requires-python = ">=3.11"
-dependencies = ["mcp==1.30.0", "google-genai==2.24.0", "yt-dlp==2026.8.19", "yt-dlp-ejs==0.8.0", "keyring==25.7.0", "faster-whisper==1.2.1", "jsonschema==4.26.0", "filelock==4.0.1", "psutil==7.2.2"]
+dependencies = ["mcp==1.30.0", "yt-dlp==2026.8.19", "yt-dlp-ejs==0.8.0", "faster-whisper==1.2.1", "jsonschema==4.26.0", "filelock==4.0.1", "psutil==7.2.2"]
 
 [project.scripts]
 highlight-mcp = "highlight_mcp.__main__:main"
