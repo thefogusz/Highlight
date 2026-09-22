@@ -38,4 +38,3 @@ def test_cached_ingest_to_verified_clip_with_fake_provider(tmp_path, monkeypatch
     assert status['ok'] and status['usage']['total_tokens'] == 300
     assert status['usage']['reported_calls'] == 2
     assert status['dashboard_path'].endswith('dashboard.html')
-
