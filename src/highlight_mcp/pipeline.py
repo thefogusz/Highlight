@@ -62,6 +62,8 @@ def youtube_failure(stderr):
         return 'YouTube requires sign-in verification for this request. Do not retry unchanged or request an MP4 by default. Explain the sign-in requirement; authenticated downloader access needs explicit user authorization.', False
     if any(x in text for x in ('private video', 'members-only', 'not available in your country', 'video unavailable', 'removed by')):
         return 'YouTube source is restricted or unavailable. Check video access; do not promise that uploading an MP4 will immediately produce clips.', False
+    if 'http error 403' in text:
+        return 'YouTube returned HTTP 403 for this media request. Check client and PO Token support.', False
     if any(x in text for x in ('429', 'too many requests')):
         return 'YouTube rate-limited this request. Stop repeated requests and retry later; do not ask for an MP4 by default.', False
     if any(x in text for x in ('timed out', 'temporary failure', 'connection reset', 'http error 503', 'http error 502')):
@@ -196,7 +198,14 @@ def run(settings, store, job, check):
         if settings.binary("node"):
             base += ["--js-runtimes", "node:" + settings.binary("node")]
         def fetch_metadata():
-            raw = json.loads(command(base + ["--dump-single-json", "--skip-download", job["request"]["url"]], check, 180))
+            nonlocal base
+            from .youtube import fallback_args, fetch_with_fallback
+            def fetch(arguments):
+                return command(arguments + ["--dump-single-json", "--skip-download", job["request"]["url"]], check, 180)
+            alternate = None if 'youtube:player_client=mweb' in base else fallback_args(settings, base)
+            payload, base = fetch_with_fallback(fetch, base, alternate,
+                lambda state: store.update(job['id'], youtube_access=state))
+            raw = json.loads(payload)
             return {key: raw.get(key) for key in ("duration", "is_live", "heatmap")}
         had_metadata = (root / 'metadata.json').exists()
         metadata = cached("metadata", fetch_metadata)

@@ -71,3 +71,10 @@ Output start/focus ranges restrict clips, not understanding: full-video transcri
 ### Background research
 
 Before preparation, the host agent researches the exact video topic using its existing web tools and passes a compact, sourced `background_research` brief to `highlight_create`. Facts, reporting and opinion stay separate; missing browsing or matching sources must be recorded explicitly. No extra API key is needed. Older jobs may attach the brief when saving `highlight_story`. Story saving and rendering require this record, but the MCP cannot independently verify that the host actually browsed or understood the sources. Full-video transcript review and boundary checks remain required.
+
+
+### YouTube fallback and comment research
+
+An optional local bgutil 2.0.0 helper can be configured with `youtube_po_provider_home` pointing to its server directory. `scripts/setup_youtube_provider.py` provides a pinned installer requiring Git, Node >=22 and npm. An eligible metadata failure gets at most one alternate mweb attempt. The successful client is retained for download and subtitles. This does not guarantee access: the real DOM9gelySKc probe still returned sign-in verification with mweb and web_safari. No account cookies are read.
+
+Research may store up to 12 observed timestamped comments with text, source links and visible likes (null when unknown). These guide inspection only after full-video reading. Missing comments do not block selection.

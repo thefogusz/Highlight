@@ -57,3 +57,7 @@ Pass the brief to highlight_create.background_research. Older jobs can supply st
 
 ## Download and validation failures
 On ingest failure inspect the returned reason before choosing a fallback. Retry transient failures only within the bounded retry policy. For YouTube sign-in/bot checks explain the access requirement; do not promise a fix by retrying, access browser cookies without explicit authorization, or ask for MP4 as the default. Preserve all user settings when repairing validation errors; check the schema field named in the error. File upload is an optional last resort only after diagnosis, never a prerequisite or a promise of immediate clips.
+
+
+## Timestamped comments
+During research inspect timestamped viewer comments on the exact video when accessible. Save up to 12 observations in background_research.comment_signals with absolute timestamp_seconds, comment text, observed likes (null if hidden), and comment permalink or video URL. Record access limitations; never invent observations. After reading the entire transcript, use these leads and heatmap to prioritize inspecting moments, not automatically select them. Check setup/payoff, duplicates and timestamp bounds. Do not skip other parts of the video or fetch all comments just to fill the list.

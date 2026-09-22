@@ -189,6 +189,44 @@
                     }
                   }
                 }
+              },
+              "comment_signals": {
+                "type": "array",
+                "maxItems": 12,
+                "description": "Observed timestamped comments from this video. Leads for inspection, not proof of humor.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "timestamp_seconds",
+                    "text",
+                    "likes",
+                    "url"
+                  ],
+                  "properties": {
+                    "timestamp_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 800
+                    },
+                    "likes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^https://"
+                    }
+                  }
+                }
               }
             },
             "allOf": [
@@ -2637,6 +2675,44 @@
                         "date": {
                           "type": "string",
                           "maxLength": 100
+                        }
+                      }
+                    }
+                  },
+                  "comment_signals": {
+                    "type": "array",
+                    "maxItems": 12,
+                    "description": "Observed timestamped comments from this video. Leads for inspection, not proof of humor.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "timestamp_seconds",
+                        "text",
+                        "likes",
+                        "url"
+                      ],
+                      "properties": {
+                        "timestamp_seconds": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 800
+                        },
+                        "likes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri",
+                          "pattern": "^https://"
                         }
                       }
                     }

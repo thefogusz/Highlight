@@ -43,3 +43,15 @@ def test_command_does_not_retry_signin(tmp_path):
     with pytest.raises(Failure, match='sign-in'):
         command([sys.executable, '-c', script, str(count), 'yt_dlp'], lambda: None, 10)
     assert count.read_text() == 'x'
+
+
+def test_timestamp_comment_contract():
+    from jsonschema import Draft202012Validator
+    from highlight_mcp.core import CATALOG
+    schema = CATALOG['highlight_create']['inputSchema']['properties']['background_research']['properties']['comment_signals']
+    validator = Draft202012Validator(schema)
+    signal = {'timestamp_seconds':574, 'text':'Interesting answer at 9:34', 'likes':42, 'url':'https://www.youtube.com/watch?v=abcdefghijk&lc=example'}
+    assert not list(validator.iter_errors([signal]))
+    assert not list(validator.iter_errors([{**signal,'likes':None}]))
+    assert list(validator.iter_errors([{**signal,'likes':-1}]))
+    assert list(validator.iter_errors([{**signal,'timestamp_seconds':-1}]))

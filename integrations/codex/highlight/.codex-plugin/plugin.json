@@ -1,6 +1,6 @@
 {
   "name": "highlight",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Find Thai YouTube highlights and render video clips with Highlight MCP.",
   "author": {
     "name": "thefogusz"
