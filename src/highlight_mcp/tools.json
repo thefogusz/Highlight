@@ -2,7 +2,7 @@
   "tools": [
     {
       "name": "highlight_create",
-      "description": "Prepare YouTube source and Thai transcript locally. No API key. At awaiting_selection the host agent must read highlight_transcript and submit highlight_render; preparation alone does not produce clips.",
+      "description": "Before preparing, use host web search to research the exact video topic and pass background_research. Prepare YouTube source and Thai transcript locally. No API key. At awaiting_selection the host agent must read highlight_transcript and submit highlight_render; preparation alone does not produce clips.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -114,6 +114,108 @@
             "minimum": 0,
             "exclusiveMaximum": 21600,
             "description": "Select clips from this absolute time until video end. Defaults to the YouTube t/start timestamp, otherwise 0. Explicit 0 overrides a timestamped link."
+          },
+          "background_research": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "video_title",
+              "brief",
+              "sources",
+              "limitations"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "completed",
+                  "unavailable",
+                  "user_skipped"
+                ]
+              },
+              "video_title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "brief": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 2500
+              },
+              "limitations": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "sources": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "url",
+                    "title",
+                    "kind",
+                    "finding",
+                    "date"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^https?://"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "kind": {
+                      "enum": [
+                        "primary",
+                        "reporting",
+                        "opinion"
+                      ]
+                    },
+                    "finding": {
+                      "type": "string",
+                      "minLength": 5,
+                      "maxLength": 800
+                    },
+                    "date": {
+                      "type": "string",
+                      "maxLength": 100
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "completed"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "sources": {
+                      "minItems": 1
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "limitations": {
+                      "minLength": 10
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         "required": [
@@ -2377,7 +2479,7 @@
     },
     {
       "name": "highlight_story",
-      "description": "Get reading coverage and saved whole-story map; or save summary/participants/topics/resolutions after all full-video pages have been delivered. Scope limits output only. Save before shortlisting. Quotes are checked against transcript; meaning remains the host agent responsibility. Updating a story invalidates boundary context receipts.",
+      "description": "Get reading coverage and saved whole-story map; or save summary/participants/topics/resolutions after all full-video pages have been delivered. Scope limits output only. Save before shortlisting. Quotes are checked against transcript; meaning remains the host agent responsibility. Updating a story invalidates boundary context receipts. Saving requires background_research either in this story or from highlight_create. Separate external claims from transcript evidence.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2463,6 +2565,108 @@
                   "type": "string",
                   "maxLength": 600
                 }
+              },
+              "background_research": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status",
+                  "video_title",
+                  "brief",
+                  "sources",
+                  "limitations"
+                ],
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "completed",
+                      "unavailable",
+                      "user_skipped"
+                    ]
+                  },
+                  "video_title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "brief": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 2500
+                  },
+                  "limitations": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "sources": {
+                    "type": "array",
+                    "maxItems": 4,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "url",
+                        "title",
+                        "kind",
+                        "finding",
+                        "date"
+                      ],
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "format": "uri",
+                          "pattern": "^https?://"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "kind": {
+                          "enum": [
+                            "primary",
+                            "reporting",
+                            "opinion"
+                          ]
+                        },
+                        "finding": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 800
+                        },
+                        "date": {
+                          "type": "string",
+                          "maxLength": 100
+                        }
+                      }
+                    }
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "completed"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "sources": {
+                          "minItems": 1
+                        }
+                      }
+                    },
+                    "else": {
+                      "properties": {
+                        "limitations": {
+                          "minLength": 10
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             },
             "required": [

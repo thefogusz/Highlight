@@ -214,12 +214,13 @@ class Service:
             url = canonical_url(original_url)
             if 'start_seconds' not in args:
                 args['start_seconds'] = url_start_seconds(original_url)
+            research = args.pop("background_research", None)
             request_key = args.pop("idempotency_key", None)
             defaults = {k: copy.deepcopy(v["default"]) for k, v in CATALOG[name]["inputSchema"]["properties"].items() if "default" in v}
             opts = {**defaults, **args}
             if opts["max_duration_seconds"] < opts["min_duration_seconds"] or any(not valid_range(r["start_seconds"], r["end_seconds"], MAX_SOURCE_SECONDS) for r in opts["focus_ranges"]):
                 raise Failure("INVALID_RANGE", "Duration or focus range is invalid.")
-            job, reused = self.store.submit({"url": url, "options": opts}, {"workflow": "agent"}, request_key)
+            job, reused = self.store.submit({"url": url, "options": opts, "background_research": research}, {"workflow": "agent"}, request_key)
             if job["state"] == "queued" and not self.settings.public()["ready"]:
                 job = self.store.update(job["id"], state="waiting_for_configuration")
             if job["state"] == "queued":

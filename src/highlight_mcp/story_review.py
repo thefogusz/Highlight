@@ -15,6 +15,10 @@ def story_response(job, rows, review, story=None):
     if story is not None:
         if not complete:
             raise Failure('INVALID_STATE', 'Read all full-video transcript pages before saving a story. Focus ranges only limit output clips.')
+        research = story.get("background_research") or job["request"].get("background_research")
+        if not research:
+            raise Failure("INVALID_STATE", "Research the exact video background with host web tools before selecting. Supply story.background_research with sources, or explicitly record unavailable and its reason. Never invent browsing evidence.")
+        story = {**story, "background_research": research}
         ids = set()
         for topic in story['topics']:
             if topic['topic_id'] in ids or not valid_range(topic['start_seconds'], topic['end_seconds'], job['duration']):
@@ -34,7 +38,7 @@ def story_response(job, rows, review, story=None):
 
 
 def require_review(review, story_id, clips, duration):
-    if not review.get('story') or story_id != review.get('story_id'):
+    if not review.get('story') or not review['story'].get('background_research') or story_id != review.get('story_id'):
         raise Failure('INVALID_STATE', 'Save a current whole-story review with highlight_story before rendering. A stale story_id is not valid.')
     topics = {t['topic_id']: t for t in review['story']['topics']}
     for clip in clips:

@@ -29,7 +29,7 @@ def test_cannot_skip_pages_or_save_story_early(prepared):
     service.call('highlight_transcript',{'job_id':job,'limit':1})
     status=service.call('highlight_story',{'job_id':job})
     assert status['delivered_segments']==1 and not status['coverage_complete']
-    story={'summary':'The whole episode concerns a question followed by a complete answer.','participants':['two speakers'],'topics':[{'topic_id':'one','start_seconds':0,'end_seconds':12,'setup':'A question opens the scene.','resolution':'An answer closes the scene.','significance':'The answer explains the dispute.','evidence_quote':'first'}],'uncertainties':[]}
+    story={'summary':'The whole episode concerns a question followed by a complete answer.','participants':['two speakers'],'topics':[{'topic_id':'one','start_seconds':0,'end_seconds':12,'setup':'A question opens the scene.','resolution':'An answer closes the scene.','significance':'The answer explains the dispute.','evidence_quote':'first'}],'uncertainties':[], 'background_research':{'status':'unavailable','video_title':'Synthetic test video','brief':'Offline synthetic fixture has no web background.','sources':[],'limitations':'Offline test has no browsing capability.'}}
     assert not service.call('highlight_story',{'job_id':job,'story':story})['ok']
 
 
@@ -61,7 +61,7 @@ def save_review(service, job):
         if page['next_cursor'] is None:break
         args['cursor']=page['next_cursor']
     duration=service.store.get(job)['duration']
-    story={'summary':'A participant asks about the dispute and the other person gives a complete response.', 'participants':['Participant one and participant two'], 'topics':[{'topic_id':'topic1','start_seconds':0,'end_seconds':duration,'setup':'The first speaker asks the question.','resolution':'The second speaker gives the answer.','significance':'This exchange resolves the central dispute.','evidence_quote':'first'}], 'uncertainties':[]}
+    story={'summary':'A participant asks about the dispute and the other person gives a complete response.', 'participants':['Participant one and participant two'], 'topics':[{'topic_id':'topic1','start_seconds':0,'end_seconds':duration,'setup':'The first speaker asks the question.','resolution':'The second speaker gives the answer.','significance':'This exchange resolves the central dispute.','evidence_quote':'first'}], 'uncertainties':[], 'background_research':{'status':'unavailable','video_title':'Synthetic test video','brief':'Offline synthetic fixture has no web background.','sources':[],'limitations':'Offline test has no browsing capability.'}}
     result=service.call('highlight_story',{'job_id':job,'story':story})
     assert result['ok'],result
     for boundary in (0,6,7,180,200,301):
@@ -177,3 +177,42 @@ def test_invalid_agent_selections_never_queue(prepared,a,b,category):
     result=service.call('highlight_render',{'job_id':job,'clips':[{'start_seconds':a,'end_seconds':b,'title_th':'test','reason_th':'test','categories':[category],'opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}]})
     assert not result['ok']
     assert len(service.store.all())==1
+
+
+def test_background_research_required_and_inherited(prepared):
+    service, job = prepared
+    save_review(service, job)
+    story = service.call('highlight_story', {'job_id': job})['story']
+    background = story.pop('background_research')
+    missing = service.call('highlight_story', {'job_id': job, 'story': story})
+    assert not missing['ok']
+    request = service.store.get(job)['request']
+    request['background_research'] = background
+    service.store.update(job, request=request)
+    saved = service.call('highlight_story', {'job_id': job, 'story': story})
+    assert saved['ok'] and saved['story']['background_research'] == background
+
+
+def test_background_research_rejects_claim_without_sources(prepared):
+    service, job = prepared
+    save_review(service, job)
+    story = service.call('highlight_story', {'job_id': job})['story']
+    story['background_research']['status'] = 'completed'
+    assert not service.call('highlight_story', {'job_id': job, 'story': story})['ok']
+    story['background_research']['status'] = 'unavailable'
+    story['background_research']['limitations'] = ''
+    assert not service.call('highlight_story', {'job_id': job, 'story': story})['ok']
+
+
+def test_create_persists_background_outside_render_options(prepared):
+    service, job = prepared
+    background = {'status':'completed', 'video_title':'Exact video title',
+                  'brief':'A source reports the background; criticism is opinion.',
+                  'limitations':'Publication date unknown.',
+                  'sources':[{'url':'https://example.com/story', 'title':'Fixture source',
+                              'kind':'reporting', 'finding':'Reported chronology for a synthetic test.', 'date':'unknown'}]}
+    created = service.call('highlight_create', {'url':'https://youtu.be/zzzzzzzzzzz', 'background_research':background})
+    assert created['ok'], created
+    request = service.store.get(created['job_id'])['request']
+    assert request['background_research'] == background
+    assert 'background_research' not in created['resolved_options']
