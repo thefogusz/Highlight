@@ -61,3 +61,7 @@ On ingest failure inspect the returned reason before choosing a fallback. Retry 
 
 ## Timestamped comments
 During research inspect timestamped viewer comments on the exact video when accessible. Save up to 12 observations in background_research.comment_signals with absolute timestamp_seconds, comment text, observed likes (null if hidden), and comment permalink or video URL. Record access limitations; never invent observations. After reading the entire transcript, use these leads and heatmap to prioritize inspecting moments, not automatically select them. Check setup/payoff, duplicates and timestamp bounds. Do not skip other parts of the video or fetch all comments just to fill the list.
+
+
+## Agent recovery
+An ingest failure is an agent recovery stage, not task completion. Follow highlight_status.next_action recovery steps. Preserve research and user settings, inspect actual browser playback, continue accessible background/comment research, and report the exact remaining dependency. Do not stop with a generic upload-MP4 request. Never bypass access controls or tool-policy blocks. Do not repeat already failed unchanged methods or claim queued recovery is active. User authorization to use account sessions is separate from permission to troubleshoot.

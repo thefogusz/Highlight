@@ -254,6 +254,10 @@ class Service:
         if name == 'highlight_status' and job['state'] == 'awaiting_selection':
             return {'dashboard_path': str(self.settings.root / job['id'] / 'dashboard.html'), 'transcription': job.get('transcription'), 'job_id': job['id'], 'state': job['state'], 'stage': 'select', 'progress': None, 'cancel_requested': job['cancel_requested'], 'poll_after_seconds': 0, 'warnings': job['warnings'], 'next_action': 'Read ALL FULL-VIDEO highlight_transcript pages once, then save highlight_story before selecting. Output scope does not limit context reading. Review boundary context after the story, then call highlight_render with standalone clips within the requested max_duration_seconds (default 60). Do not wait or poll: the host agent must select now.'}
         if name == "highlight_status":
+            from .recovery import recovery_plan, recovery_action
+            plan = recovery_plan(job)
+            if plan is not None and job.get('recovery_plan') != plan:
+                job = self.store.update(job['id'], recovery_plan=plan)
             warnings = job["warnings"] + ([job["error"]] if job["error"] else [])
             stage_hint = {
                 'discover': 'Selecting candidates from transcript and available replay evidence; video/audio inspection has not yet started.',
@@ -267,13 +271,15 @@ class Service:
                     render_dashboard(self.settings.root, job)
                 except OSError:
                     pass
-            return {"transcription": job.get("transcription"), **({"usage": summarize(job)} if job.get("usage") or job.get("provider_calls") else {}), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 60, "warnings": warnings, "next_action": "Use highlight_results for available clips. Report the saved error without guessing its cause." if job["state"] in TERMINAL else stage_hint + " Wait at least 60 seconds before checking again. Do not batch status calls. During transcription report measured transcription progress only; CPU use is not completion evidence."}
+            return {"transcription": job.get("transcription"), **({"usage": summarize(job)} if job.get("usage") or job.get("provider_calls") else {}), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 60, "warnings": warnings, "next_action": recovery_action(plan) if plan else "Use highlight_results for available clips. Report the saved error without guessing its cause." if job["state"] in TERMINAL else stage_hint + " Wait at least 60 seconds before checking again. Do not batch status calls. During transcription report measured transcription progress only; CPU use is not completion evidence."}
         if name == "highlight_results":
+            from .recovery import recovery_plan, recovery_action
+            plan = recovery_plan(job)
             for clip in job["clips"]:
                 if any(not Path(a["path"]).is_file() for a in clip["artifacts"]):
                     raise Failure("ARTIFACT_EXPIRED", "One or more retained artifacts are missing.")
             clips, cursor = self.page(job["clips"], args)
-            return {"job_id": job["id"], "job_state": job["state"], "source_url": job["request"]["url"], "source_duration_seconds": job["duration"], "clips": clips, "next_cursor": cursor, "warnings": job["warnings"], "next_action": f"For story/context review use source job {job.get('source_job', job['id'])}. Revisions require its current story_id/topic_id and new boundary reads."}
+            return {"job_id": job["id"], "job_state": job["state"], "source_url": job["request"]["url"], "source_duration_seconds": job["duration"], "clips": clips, "next_cursor": cursor, "warnings": job["warnings"], "next_action": recovery_action(plan) if plan else f"For story/context review use source job {job.get('source_job', job['id'])}. Revisions require its current story_id/topic_id and new boundary reads."}
         if name == "highlight_cancel":
             if job["state"] not in TERMINAL:
                 job = self.store.update(job["id"], cancel_requested=True, **({"state": "cancelled"} if job["state"] != "running" else {}))
