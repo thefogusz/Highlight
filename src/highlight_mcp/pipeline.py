@@ -224,7 +224,7 @@ def run(settings, store, job, check):
         heatmap_state = 'available' if metadata.get('heatmap') else 'not_returned'
         # One fresh metadata request per run, never a video download or model call.
         # Preserve cached candidate decisions on retries; don't silently reanalyse paid work.
-        if opts['heatmap'] != 'ignore' and had_metadata and not metadata.get('heatmap') and not (root / 'candidates.json').exists():
+        if not job.get('source_acquisition') and opts['heatmap'] != 'ignore' and had_metadata and not metadata.get('heatmap') and not (root / 'candidates.json').exists():
             metadata, heatmap_state = refresh_missing_heatmap(metadata, fetch_metadata)
             if heatmap_state != 'fetch_failed':
                 temporary = root / 'metadata.tmp'

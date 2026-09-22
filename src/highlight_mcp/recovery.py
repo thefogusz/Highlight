@@ -9,6 +9,7 @@ def recovery_plan(job):
         'Keep this job ID, source URL, user options and completed research. Do not recreate the job with defaults.',
         'Check cached source/transcript artifacts and installed yt-dlp, EJS and JS runtime. A cache must belong to this exact video and be valid; do not fabricate a usable file.',
         'Use host browser tools to inspect this exact video if available. Observe whether playback works; never infer this from the title alone.',
+        'The host agent should acquire the full video using an available supported alternative, verify its identity and duration, then call highlight_retry on this job with acquired_source={path, source_url, expected_duration_seconds, method}. Do not repeat the same failed downloader/environment. Never bypass access restrictions. This is a host handoff, not an automatic download success.',
         'Continue independent background research and accessible timestamped comments/likes. Preserve sources and uncertainty. Do not shortlist before full-video transcript review.',
     ]
     if 'database is locked' in error:

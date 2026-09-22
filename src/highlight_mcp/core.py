@@ -296,6 +296,10 @@ class Service:
                 return {"job_id": job["id"], "state": job["state"], "reused": True}
             if not job["request"].get("revision") and not self.settings.public()["ready"]:
                 raise Failure("CONFIG_REQUIRED", "FFmpeg or ffprobe is missing.", "Install FFmpeg, then retry.")
+            if args.get('acquired_source'):
+                from .source_import import import_source
+                receipt = import_source(self.settings, job, args['acquired_source'])
+                self.store.update(job['id'], source_acquisition=receipt)
             browser = args.get('authorized_browser', job.get('authorized_browser'))
             self.store.update(job["id"], state="queued", cancel_requested=False, error=None, authorized_browser=browser)
             self.start_worker()

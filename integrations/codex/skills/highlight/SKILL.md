@@ -49,3 +49,7 @@ An ingest failure is an agent recovery stage, not task completion. Follow highli
 
 ## Authorized recovery and quality
 Authenticated retry is supported: after explicit permission for this exact job/video, call highlight_retry with authorized_browser=chrome, edge or firefox. Do not ask again when authorization is already present. Set none to revoke. Never display session values. If the cookie database is locked, ask the user to save work and close the browser fully; do not terminate it yourself or disable encryption. Source downloads prefer 1080p or higher, with 720p as the minimum fallback and best available audio. Render uses 1080 output for HD sources, otherwise 720, H264 CRF18 and AAC192k. Do not label letterboxing or upscaling as additional source detail.
+
+
+## Host-acquired source
+If ingest fails, the host agent owns recovery: follow next_action, try an available supported alternative acquisition method, and resume this same job with highlight_retry.acquired_source (absolute path, source_url, expected_duration_seconds, method). Verify exact video identity and full original timeline first. The server validates media quality and decoding, not content identity. Do not repeat an unchanged failed method, bypass access restrictions or default to asking for MP4. Never claim automatic recovery succeeded without a verified file.

@@ -78,3 +78,7 @@ Before preparation, the host agent researches the exact video topic using its ex
 An optional local bgutil 2.0.0 helper can be configured with `youtube_po_provider_home` pointing to its server directory. `scripts/setup_youtube_provider.py` provides a pinned installer requiring Git, Node >=22 and npm. An eligible metadata failure gets at most one alternate mweb attempt. The successful client is retained for download and subtitles. This does not guarantee access: the real DOM9gelySKc probe still returned sign-in verification with mweb and web_safari. No account cookies are read.
 
 Research may store up to 12 observed timestamped comments with text, source links and visible likes (null when unknown). These guide inspection only after full-video reading. Missing comments do not block selection.
+
+
+### Agent download recovery
+If built-in ingestion fails, the host agent can acquire the full source with an available supported tool and return it to the same job through `highlight_retry.acquired_source`. This preserves options and research; the server checks duration, minimum 720p, audio and full decoding before resuming. Video identity is verified by the host agent. This handoff does not guarantee that another downloader can access a blocked YouTube video.
