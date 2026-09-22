@@ -65,3 +65,7 @@ During research inspect timestamped viewer comments on the exact video when acce
 
 ## Agent recovery
 An ingest failure is an agent recovery stage, not task completion. Follow highlight_status.next_action recovery steps. Preserve research and user settings, inspect actual browser playback, continue accessible background/comment research, and report the exact remaining dependency. Do not stop with a generic upload-MP4 request. Never bypass access controls or tool-policy blocks. Do not repeat already failed unchanged methods or claim queued recovery is active. User authorization to use account sessions is separate from permission to troubleshoot.
+
+
+## Authorized recovery and quality
+Authenticated retry is supported: after explicit permission for this exact job/video, call highlight_retry with authorized_browser=chrome, edge or firefox. Do not ask again when authorization is already present. Set none to revoke. Never display session values. If the cookie database is locked, ask the user to save work and close the browser fully; do not terminate it yourself or disable encryption. Source downloads prefer 1080p or higher, with 720p as the minimum fallback and best available audio. Render uses 1080 output for HD sources, otherwise 720, H264 CRF18 and AAC192k. Do not label letterboxing or upscaling as additional source detail.

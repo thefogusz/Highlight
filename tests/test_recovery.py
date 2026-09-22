@@ -29,3 +29,26 @@ def test_real_status_and_results_return_recovery(tmp_path,monkeypatch):
         assert response['ok'],response
         assert 'INGEST RECOVERY' in response['next_action']
     assert service.store.get(job)['recovery_plan']['cause']=='youtube_authentication'
+
+
+def test_authorized_browser_scoped_to_job_and_revocable(tmp_path,monkeypatch):
+    from highlight_mcp.core import Service,Settings
+    monkeypatch.setenv('HIGHLIGHT_DATA_DIR',str(tmp_path))
+    service=Service(Settings(),launch=False)
+    job=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})['job_id']
+    service.store.update(job,state='failed',stage='ingest')
+    assert service.call('highlight_retry',{'job_id':job,'authorized_browser':'chrome'})['ok']
+    assert service.store.get(job)['authorized_browser']=='chrome'
+    assert 'authorized_browser' not in service.settings.config
+    service.store.update(job,state='failed')
+    assert service.call('highlight_retry',{'job_id':job,'authorized_browser':'none'})['ok']
+    assert service.store.get(job)['authorized_browser']=='none'
+
+
+def test_browser_lock_action_does_not_require_repeat_consent():
+    from highlight_mcp.pipeline import youtube_failure
+    message,retry=youtube_failure('Could not copy Chrome cookie database')
+    assert not retry
+    plan=recovery_plan({'state':'failed','stage':'ingest','error':message})
+    assert plan['cause']=='browser_session_locked'
+    assert 'Authorization is already present' in recovery_action(plan)

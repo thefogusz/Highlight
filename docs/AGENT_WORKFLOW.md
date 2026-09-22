@@ -53,3 +53,7 @@ Pass the brief to highlight_create.background_research. Older jobs can supply st
 
 ## Timestamped comments
 During research inspect timestamped viewer comments on the exact video when accessible. Save up to 12 observations in background_research.comment_signals with absolute timestamp_seconds, comment text, observed likes (null if hidden), and comment permalink or video URL. Record access limitations; never invent observations. After reading the entire transcript, use these leads and heatmap to prioritize inspecting moments, not automatically select them. Check setup/payoff, duplicates and timestamp bounds. Do not skip other parts of the video or fetch all comments just to fill the list.
+
+
+## Authorized recovery and quality
+Authenticated retry is supported: after explicit permission for this exact job/video, call highlight_retry with authorized_browser=chrome, edge or firefox. Do not ask again when authorization is already present. Set none to revoke. Never display session values. If the cookie database is locked, ask the user to save work and close the browser fully; do not terminate it yourself or disable encryption. Source downloads prefer 1080p or higher, with 720p as the minimum fallback and best available audio. Render uses 1080 output for HD sources, otherwise 720, H264 CRF18 and AAC192k. Do not label letterboxing or upscaling as additional source detail.

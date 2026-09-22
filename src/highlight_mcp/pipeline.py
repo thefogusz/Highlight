@@ -58,6 +58,10 @@ def selection_ranges(opts, duration):
 def youtube_failure(stderr):
     """Return safe categories, never raw stderr containing URLs or credentials."""
     text = stderr.lower()
+    if 'could not copy' in text and 'cookie' in text:
+        return 'Browser session database is locked. Ask the user to save work and close that browser fully, then retry this same authorized job. Do not kill browser processes or request an MP4.', False
+    if 'decrypt' in text or 'dpapi' in text:
+        return 'Browser session encryption is unavailable to this downloader. Do not disable browser security; a supported authorized session method is required.', False
     if 'sign in to confirm' in text or 'not a bot' in text:
         return 'YouTube requires sign-in verification for this request. Do not retry unchanged or request an MP4 by default. Explain the sign-in requirement; authenticated downloader access needs explicit user authorization.', False
     if any(x in text for x in ('private video', 'members-only', 'not available in your country', 'video unavailable', 'removed by')):
@@ -121,10 +125,13 @@ def render_clip(settings, source, output, start, end, aspect, check, maximum=60)
     info = probe(settings, source, check)
     if not valid_range(start, end, float(info["format"]["duration"])):
         raise Failure("INVALID_RANGE", "Clip lies outside the source.")
-    w, h = (720, 1280) if aspect == "9:16" else (1280, 720)
+    video = next((s for s in info.get('streams', []) if s.get('codec_type') == 'video'), {})
+    source_short_edge = min(video.get('width', 0), video.get('height', 0))
+    edge = 1080 if source_short_edge >= 1080 else 720
+    w, h = (edge, edge * 16 // 9) if aspect == "9:16" else (edge * 16 // 9, edge)
     command([settings.binary("ffmpeg"), "-v", "error", "-y", "-ss", start, "-i", source, "-t", end-start,
              "-map", "0:v:0", "-map", "0:a:0?", "-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1",
-             "-c:v", "libx264", "-preset", "fast", "-crf", "21", "-c:a", "aac", "-movflags", "+faststart", output], check)
+             "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", output], check)
     result = probe(settings, output, check)
     if float(result['format']['duration']) > maximum or abs(float(result["format"]["duration"]) - (end-start)) > .3:
         raise Failure("RENDER_FAILED", "Rendered duration failed verification.")
@@ -195,6 +202,8 @@ def run(settings, store, job, check):
     else:
         stage("ingest")
         base = [sys.executable, "-m", "yt_dlp", "--ignore-config", "--no-playlist", "--no-warnings", "--socket-timeout", "30"]
+        if job.get('authorized_browser') in {'chrome', 'edge', 'firefox'}:
+            base += ['--cookies-from-browser', job['authorized_browser']]
         if settings.binary("node"):
             base += ["--js-runtimes", "node:" + settings.binary("node")]
         def fetch_metadata():
@@ -231,10 +240,17 @@ def run(settings, store, job, check):
             raise Failure("HEATMAP_UNAVAILABLE", warnings[0])
         source = root / "source.mp4"
         if not source.exists():
-            command(base + ["--max-filesize", "5G", "--ffmpeg-location", str(Path(settings.binary("ffmpeg")).parent), "-f", "bv*[height<=720]+ba/b[height<=720]", "--merge-output-format", "mp4", "--remux-video", "mp4", "-o", str(root / "download.%(ext)s"), job["request"]["url"]], check)
+            command(base + ["--max-filesize", "5G", "--ffmpeg-location", str(Path(settings.binary("ffmpeg")).parent), "-f", "bv*[height>=1080]+ba/b[height>=1080]/bv*[height>=720]+ba/b[height>=720]", "--merge-output-format", "mp4", "--remux-video", "mp4", "-o", str(root / "download.%(ext)s"), job["request"]["url"]], check)
             downloaded = root / "download.mp4"
             if not downloaded.exists():
                 raise Failure("SOURCE_UNAVAILABLE", "YouTube did not provide a downloadable video.")
+            downloaded_info = probe(settings, downloaded, check)
+            streams = downloaded_info.get('streams', [])
+            video_stream = next((s for s in streams if s.get('codec_type') == 'video'), {})
+            if min(video_stream.get('width', 0), video_stream.get('height', 0)) < 720 or not any(s.get('codec_type') == 'audio' for s in streams):
+                raise Failure('SOURCE_UNAVAILABLE', 'Downloaded source needs at least 720p and an audio track; do not silently lower quality.')
+            if min(video_stream.get('width', 0), video_stream.get('height', 0)) < 1080:
+                store.update(job['id'], warnings=warnings + ['Source is 720p; no available 1080p-or-higher format was selected. Output is not native 1080p.'])
             downloaded.replace(source)
         duration = float(probe(settings, source, check)["format"]["duration"])
         validate_source_duration(duration, False)

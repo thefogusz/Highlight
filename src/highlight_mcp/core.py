@@ -296,7 +296,8 @@ class Service:
                 return {"job_id": job["id"], "state": job["state"], "reused": True}
             if not job["request"].get("revision") and not self.settings.public()["ready"]:
                 raise Failure("CONFIG_REQUIRED", "FFmpeg or ffprobe is missing.", "Install FFmpeg, then retry.")
-            self.store.update(job["id"], state="queued", cancel_requested=False, error=None)
+            browser = args.get('authorized_browser', job.get('authorized_browser'))
+            self.store.update(job["id"], state="queued", cancel_requested=False, error=None, authorized_browser=browser)
             self.start_worker()
             return {"job_id": job["id"], "state": "queued", "reused": False, "warnings": ["Resume local work from cached source and transcript; the host agent selects highlights."]}
         if name == "highlight_revise":

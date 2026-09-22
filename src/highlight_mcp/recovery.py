@@ -11,7 +11,13 @@ def recovery_plan(job):
         'Use host browser tools to inspect this exact video if available. Observe whether playback works; never infer this from the title alone.',
         'Continue independent background research and accessible timestamped comments/likes. Preserve sources and uncertainty. Do not shortlist before full-video transcript review.',
     ]
-    if 'sign-in' in error or 'not a bot' in error:
+    if 'database is locked' in error:
+        cause = 'browser_session_locked'
+        action = 'Authorization is already present. Ask the user to save work and close the authorized browser fully, then retry the same job. Do not force-close processes, ask permission again or request an MP4.'
+    elif 'session encryption' in error:
+        cause = 'browser_session_encryption'
+        action = 'Do not disable browser encryption. Explain that this session cannot be read by the downloader and use only a supported authorized authentication method.'
+    elif 'sign-in' in error or 'not a bot' in error:
         cause = 'youtube_authentication'
         action = 'If playback works in an authenticated browser, request narrowly scoped authorization for using that YouTube session in the downloader unless already granted. Do not extract cookies without authorization. Explain the single required action; do not demand an MP4. If browser playback also requires verification, hand that step to the user.'
     elif 'rate-limit' in error or '429' in error:

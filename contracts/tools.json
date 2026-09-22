@@ -1574,6 +1574,16 @@
           "job_id": {
             "type": "string",
             "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "authorized_browser": {
+            "type": "string",
+            "enum": [
+              "chrome",
+              "edge",
+              "firefox",
+              "none"
+            ],
+            "description": "Use only after explicit user authorization for this job/video. Reads browser session locally; never sends it to third-party download services. none revokes saved authorization."
           }
         },
         "required": [
