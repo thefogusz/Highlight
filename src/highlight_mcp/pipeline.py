@@ -116,6 +116,8 @@ def run(settings, store, job, check):
     else:
         stage("ingest")
         base = [sys.executable, "-m", "yt_dlp", "--ignore-config", "--no-playlist", "--no-warnings", "--socket-timeout", "30"]
+        if settings.binary("node"):
+            base += ["--js-runtimes", "node:" + settings.binary("node")]
         def fetch_metadata():
             raw = json.loads(command(base + ["--dump-single-json", "--skip-download", job["request"]["url"]], check, 180))
             return {key: raw.get(key) for key in ("duration", "is_live", "heatmap")}

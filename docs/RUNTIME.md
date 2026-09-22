@@ -25,7 +25,7 @@ This is an installable alpha, not completion of every requirement in SPEC/ARCHIT
 - Retention cleanup is not automatic. `expires_at` is an advisory 30-day retention date; files persist until manually removed. Delete completed job folders only when no longer needed. Jobs database stores local paths.
 - A worker interruption requires explicit retry. Cancellation waits for an in-flight synchronous provider/ASR operation to yield; it cannot retract an already billed request.
 - No authenticated gallery, thumbnails, smart face tracking, burned-in captions, GPU setup, hosted multi-user mode or auto-updater.
-- YouTube extraction may require a supported JavaScript runtime or encounter platform access restrictions. The server does not automatically use browser cookies or account credentials; such failures need separate diagnosis.
+- YouTube extraction uses the pinned yt-dlp-ejs helper and enables Node.js when found (otherwise yt-dlp defaults to Deno). Install a supported Node.js or Deno runtime. Platform access restrictions may still occur. The server does not automatically use browser cookies or account credentials; such failures need separate diagnosis.
 - MCP does not guarantee an @ mention. Agent should call create once, poll at the suggested interval, and return existing paths. Do not repeatedly create/retry failed jobs automatically.
 
 ## Verification performed
