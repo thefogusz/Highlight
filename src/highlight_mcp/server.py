@@ -12,7 +12,7 @@ from .core import Service, Settings, TOOLS
 async def serve():
     icon_data = (Path(__file__).parent / "assets" / "highlight.svg").read_bytes()
     icons = [types.Icon(src="data:image/svg+xml;base64," + base64.b64encode(icon_data).decode("ascii"), mimeType="image/svg+xml", sizes=["any"])]
-    server = Server("highlight", icons=icons, website_url="https://github.com/thefogusz/Highlight")
+    server = Server("highlight", icons=icons, website_url="https://github.com/thefogusz/Highlight", instructions="For a YouTube highlight request, check highlight_settings, then call highlight_create once with the user's URL and options. Poll highlight_status at the suggested interval and return actual MP4 paths from highlight_results. Ask for a URL only if missing. Never ask for API keys in chat; use local Highlight Settings. Do not automatically retry provider failures. Heatmap is optional replay intensity, not viewer count or proof of humor.")
 
     @server.list_tools()
     async def list_tools():
