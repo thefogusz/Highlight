@@ -1,4 +1,4 @@
-# Highlight MCP 0.2 — ไม่ต้องมี API key
+# Highlight MCP 0.3 — ไม่ต้องมี API key
 
 วางลิงก์ YouTube ให้ Codex, Claude หรือ agent ที่รองรับ MCP แล้วได้ MP4 แยกคลิปละไม่เกิน 60 วินาทีโดยค่าเริ่มต้น (ปรับได้ตามผู้ใช้) MCP เตรียมข้อมูลและตัดไฟล์ ส่วนโมเดลในแชทวิเคราะห์ ไม่มีการเรียก Gemini ใน worker
 
@@ -26,7 +26,7 @@ python -m venv .venv
 
 1. `highlight_create` เตรียมวิดีโอ ดึงซับไทยคนทำก่อน แล้วซับไทยอัตโนมัติ หากใช้ไม่ได้จึงเรียก Whisper
 2. `highlight_status` รอจน `awaiting_selection` จากนั้นหยุด poll
-3. `highlight_transcript` อ่านทีละหน้าให้ครบ เก็บ shortlist สั้นพร้อมเวลาและเหตุผล
+3. `highlight_transcript` อ่านทีละหน้าให้ครบ เก็บบันทึกเรื่องราวก่อน ยังไม่เลือกไฮไลต์ แล้วบันทึก `highlight_story` ให้ครบก่อนเลือกช่วง
 4. Agent จัดอันดับ แล้วส่ง `highlight_render` พร้อมช่วงที่เลือก
 5. รอ **render job ที่คืนมา** แล้วอ่าน `highlight_results` เพื่อแสดง MP4/SRT
 
@@ -61,3 +61,8 @@ Tests ครอบคลุม MCP stdio, keyless preparation, pagination, valid
 The requested maximum (default 60 seconds) is a ceiling, never a target. Do not fill the time or force every clip near one minute. Select a complete meaningful moment first: setup then punchline, question then answer, claim then response/consequence. Read 15–30 seconds of surrounding context for shortlisted boundaries. End before the next unfinished topic begins. A deliberate cliffhanger must be understandable and meaningful, not a dangling fragment. Supply opening_reason and ending_reason to highlight_render. The default 5-second minimum is technical, not an editorial target. If a complete exchange cannot fit, choose another moment. Transcript-based timing remains approximate; verify speech/reaction with actual media tools when available.
 
 ผู้ใช้ขอ “คลิปละไม่เกิน 5 นาที” ให้ agent ส่ง `max_duration_seconds: 300` โดยไม่เปลี่ยนค่าเริ่มต้นของงานอื่น `highlight_revise` รับค่า override นี้ได้เช่นกัน หากไม่ส่งจะใช้เพดานของงานเดิม ทุกช่วงยังต้องอยู่ภายในวิดีโอต้นฉบับและจบใจความ ไม่ใช่เติมให้ครบเวลาที่ตั้งไว้
+
+
+## Whole-story gate (current)
+
+Output start/focus ranges restrict clips, not understanding: full-video transcript delivery is mandatory. Sequential page receipts are persisted against the transcript hash. Before selection, save `highlight_story` with people, a narrative summary, topic setup, resolution (or explicitly unresolved), importance, real supporting quotes, and uncertainty. Each clip references current `story_id` and `topic_id`. After saving, read at least 15 seconds around both clip boundaries through context queries; complete every context page. Changing the transcript invalidates reading/story receipts; changing the map invalidates boundary receipts. All revisions, including historical clips, require current story_id/topic_id from the source preparation job and context reads around the new boundaries. Re-prepare a legacy source if its transcript is missing. Receipts prove data delivery and procedural compliance, NOT comprehension or correct audio timing. Rolling caption endpoints are not speech endpoints. Use local word timing/media evidence near selected boundaries; choose another complete exchange if closure is uncertain.

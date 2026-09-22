@@ -1072,7 +1072,7 @@
     },
     {
       "name": "highlight_revise",
-      "description": "Queue a new immutable revision of one clip using absolute ORIGINAL source times. Preserve original; requires expected_revision. Returns operation job_id.",
+      "description": "Queue a new immutable revision of one clip using absolute ORIGINAL source times. Preserve original; requires expected_revision. Returns operation job_id. Requires current story_id and topic_id from the source preparation job, and boundary-context reads around the NEW endpoints. Historical clips also require source story review.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1101,6 +1101,15 @@
             "minimum": 5,
             "maximum": 21600,
             "description": "Explicit user override of the clip ceiling for this revision. Otherwise inherit the job limit."
+          },
+          "story_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "topic_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
           }
         },
         "required": [
@@ -1108,7 +1117,9 @@
           "clip_id",
           "expected_revision",
           "start_seconds",
-          "end_seconds"
+          "end_seconds",
+          "story_id",
+          "topic_id"
         ],
         "additionalProperties": false
       },
@@ -1942,7 +1953,7 @@
     },
     {
       "name": "highlight_transcript",
-      "description": "Read prepared transcript pages for the host agent to select highlights. No API key. Read all pages before final ranking. After shortlisting, use context_start_seconds/context_end_seconds to inspect surrounding boundary dialogue without rereading the full transcript.",
+      "description": "Read FULL VIDEO transcript pages sequentially, regardless of requested output scope. Records delivery coverage, not comprehension. After reading all pages, save highlight_story. Optional context times read up to 120 seconds for boundary review after story save.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2125,7 +2136,7 @@
         ]
       },
       "annotations": {
-        "readOnlyHint": true,
+        "readOnlyHint": false,
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
@@ -2133,7 +2144,7 @@
     },
     {
       "name": "highlight_render",
-      "description": "Render agent-selected separate clips, each within the requested maximum (default 60 seconds). Requires prepared job awaiting_selection. Repeated identical selection reuses the render job. Prioritize complete meaning over duration. End after payoff/resolution, before a new unfinished thought; never pad to the maximum. Supply opening_reason and ending_reason after checking surrounding context.",
+      "description": "Render agent-selected separate clips, each within the requested maximum (default 60 seconds). Requires prepared job awaiting_selection. Repeated identical selection reuses the render job. Prioritize complete meaning over duration. End after payoff/resolution, before a new unfinished thought; never pad to the maximum. Supply opening_reason and ending_reason after checking surrounding context. Requires a saved whole-story map and post-story boundary context reads. Each clip must refer to a story topic_id; supply current story_id.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2190,6 +2201,11 @@
                   "minLength": 10,
                   "maxLength": 600,
                   "description": "Explain the completed answer/payoff/conclusion. Exclude unfinished new topics. Requested maximum is a ceiling, never a target."
+                },
+                "topic_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
                 }
               },
               "required": [
@@ -2199,15 +2215,21 @@
                 "reason_th",
                 "categories",
                 "opening_reason",
-                "ending_reason"
+                "ending_reason",
+                "topic_id"
               ],
               "additionalProperties": false
             }
+          },
+          "story_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
           }
         },
         "required": [
           "job_id",
-          "clips"
+          "clips",
+          "story_id"
         ],
         "additionalProperties": false
       },
@@ -2267,6 +2289,255 @@
               "parent_job_id",
               "state",
               "reused"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_story",
+      "description": "Get reading coverage and saved whole-story map; or save summary/participants/topics/resolutions after all full-video pages have been delivered. Scope limits output only. Save before shortlisting. Quotes are checked against transcript; meaning remains the host agent responsibility. Updating a story invalidates boundary context receipts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^job_[a-f0-9]{32}$"
+          },
+          "story": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "string",
+                "minLength": 30,
+                "maxLength": 4000
+              },
+              "participants": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 30,
+                "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 300
+                }
+              },
+              "topics": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 60,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "topic_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "start_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "end_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "setup": {
+                      "type": "string",
+                      "minLength": 10,
+                      "maxLength": 1200
+                    },
+                    "resolution": {
+                      "type": "string",
+                      "minLength": 10,
+                      "maxLength": 1200
+                    },
+                    "significance": {
+                      "type": "string",
+                      "minLength": 10,
+                      "maxLength": 1200
+                    },
+                    "evidence_quote": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 600
+                    }
+                  },
+                  "required": [
+                    "topic_id",
+                    "start_seconds",
+                    "end_seconds",
+                    "setup",
+                    "resolution",
+                    "significance",
+                    "evidence_quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "uncertainties": {
+                "type": "array",
+                "maxItems": 30,
+                "items": {
+                  "type": "string",
+                  "maxLength": 600
+                }
+              }
+            },
+            "required": [
+              "summary",
+              "participants",
+              "topics",
+              "uncertainties"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^job_[a-f0-9]{32}$"
+              },
+              "coverage_complete": {
+                "type": "boolean"
+              },
+              "delivered_segments": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total_segments": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "story_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "story": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "schema_version",
+              "ok",
+              "warnings",
+              "next_action",
+              "job_id",
+              "coverage_complete",
+              "delivered_segments",
+              "total_segments",
+              "story_id",
+              "story"
             ],
             "additionalProperties": false
           },

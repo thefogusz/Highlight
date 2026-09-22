@@ -4,7 +4,7 @@ from highlight_mcp.core import Settings, Service
 from highlight_mcp.worker import worker
 
 
-def test_worker_renders_revision_without_provider(tmp_path, monkeypatch):
+def test_legacy_revision_cannot_bypass_story_review(tmp_path, monkeypatch):
     monkeypatch.setenv("HIGHLIGHT_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("HIGHLIGHT_DISABLE_KEYRING", "1")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
@@ -19,13 +19,8 @@ def test_worker_renders_revision_without_provider(tmp_path, monkeypatch):
     clip = {"clip_id": "clip_1", "revision": 1, "title_th": "ทดสอบ", "start_seconds": 0, "end_seconds": 5, "categories": ["highlight"], "reason_th": "test", "confidence": "low"}
     service.store.update(parent_id, state="completed", duration=9, clips=[clip])
     revised = service.call("highlight_revise", {"job_id": parent_id, "clip_id": "clip_1", "expected_revision": 1, "start_seconds": 1, "end_seconds": 7})
-    assert revised["ok"], revised
-    worker()
-    result = service.call("highlight_results", {"job_id": revised["job_id"]})
-    assert result["ok"], result
-    assert result["job_state"] == "completed", service.store.get(revised["job_id"])
-    assert result["clips"][0]["revision"] == 2
-    assert result["clips"][0]["artifacts"][0]["size_bytes"] > 0
+    assert not revised['ok']
+    assert len(service.store.all()) == 1
 
 
 def test_crashed_worker_requires_explicit_retry(tmp_path):

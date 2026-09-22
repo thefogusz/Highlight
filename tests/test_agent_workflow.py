@@ -5,6 +5,73 @@ from highlight_mcp.core import Service, Settings
 from highlight_mcp.worker import worker
 
 
+def test_render_requires_whole_story_review(prepared):
+    service, job = prepared
+    clip = {'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'test','categories':['highlight'],'topic_id':'topic1','opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}
+    result=service.call('highlight_render',{'job_id':job,'clips':[clip]})
+    assert not result['ok']
+    story=service.call('highlight_story',{'job_id':job})
+    assert story['ok'] and not story['coverage_complete']
+
+
+def test_full_read_includes_context_before_requested_start(prepared):
+    service,job=prepared
+    request=service.store.get(job)['request']
+    request['options']['start_seconds']=6
+    service.store.update(job,request=request)
+    page=service.call('highlight_transcript',{'job_id':job})
+    assert page['ok'] and page['segments'][0]['start']==0
+
+
+def test_cannot_skip_pages_or_save_story_early(prepared):
+    service,job=prepared
+    assert not service.call('highlight_transcript',{'job_id':job,'cursor':'1'})['ok']
+    service.call('highlight_transcript',{'job_id':job,'limit':1})
+    status=service.call('highlight_story',{'job_id':job})
+    assert status['delivered_segments']==1 and not status['coverage_complete']
+    story={'summary':'The whole episode concerns a question followed by a complete answer.','participants':['two speakers'],'topics':[{'topic_id':'one','start_seconds':0,'end_seconds':12,'setup':'A question opens the scene.','resolution':'An answer closes the scene.','significance':'The answer explains the dispute.','evidence_quote':'first'}],'uncertainties':[]}
+    assert not service.call('highlight_story',{'job_id':job,'story':story})['ok']
+
+
+def test_story_and_context_are_invalidated_by_changes(prepared):
+    service,job=prepared
+    story_id=save_review(service,job)
+    story=service.call('highlight_story',{'job_id':job})['story']
+    story['topics'][0]['evidence_quote']='invented quote'
+    assert not service.call('highlight_story',{'job_id':job,'story':story})['ok']
+    story['topics'][0]['evidence_quote']='first'
+    story['summary']+=' Additional context changes the interpretation.'
+    saved=service.call('highlight_story',{'job_id':job,'story':story})
+    assert saved['ok'] and saved['story_id']!=story_id
+    clip={'topic_id':'topic1','start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'test','categories':['highlight'],'opening_reason':'The question gives context.','ending_reason':'The answer resolves the exchange.'}
+    for identifier in (story_id,saved['story_id']):
+        result=service.call('highlight_render',{'job_id':job,'story_id':identifier,'clips':[clip]})
+        assert not result['ok']
+    path=service.settings.root/job/'transcript.json'
+    path.write_text(json.dumps([{'start':0,'end':12,'text':'changed transcript'}]))
+    status=service.call('highlight_story',{'job_id':job})
+    assert not status['coverage_complete'] and status['story_id'] is None
+
+
+def save_review(service, job):
+    args={'job_id':job}
+    while True:
+        page=service.call('highlight_transcript',args)
+        assert page['ok'],page
+        if page['next_cursor'] is None:break
+        args['cursor']=page['next_cursor']
+    duration=service.store.get(job)['duration']
+    story={'summary':'A participant asks about the dispute and the other person gives a complete response.', 'participants':['Participant one and participant two'], 'topics':[{'topic_id':'topic1','start_seconds':0,'end_seconds':duration,'setup':'The first speaker asks the question.','resolution':'The second speaker gives the answer.','significance':'This exchange resolves the central dispute.','evidence_quote':'first'}], 'uncertainties':[]}
+    result=service.call('highlight_story',{'job_id':job,'story':story})
+    assert result['ok'],result
+    for boundary in (0,6,7,180,200,301):
+        if boundary>duration:continue
+        a,b=max(0,boundary-15),min(duration,boundary+15)
+        context=service.call('highlight_transcript',{'job_id':job,'context_start_seconds':a,'context_end_seconds':b})
+        assert context['ok'],context
+    return result['story_id']
+
+
 @pytest.fixture
 def prepared(tmp_path, monkeypatch):
     monkeypatch.setenv('HIGHLIGHT_DATA_DIR', str(tmp_path))
@@ -31,7 +98,7 @@ def test_keyless_prepare_select_render_and_idempotency(prepared):
     assert first['ok'] and first['next_cursor'] == '1'
     second = service.call('highlight_transcript', {'job_id':job,'cursor':'1'})
     assert second['segments'][0]['text'] == 'second' and second['next_cursor'] is None
-    request={'job_id':job,'clips':[{'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}]}
+    request={'job_id':job,'story_id':save_review(service,job),'clips':[{'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'topic_id':'topic1','opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}]}
     render=service.call('highlight_render',request)
     assert render['ok'],render
     assert service.call('highlight_render',request)['job_id']==render['job_id']
@@ -43,7 +110,7 @@ def test_keyless_prepare_select_render_and_idempotency(prepared):
     assert clip['evidence'][0]['source']=='transcript'
     assert len(clip['artifacts'])==2
     assert service.store.get(render['job_id']).get('provider_calls',0)==0
-    revised = service.call('highlight_revise', {'job_id':render['job_id'], 'clip_id':clip['clip_id'], 'expected_revision':1, 'start_seconds':1, 'end_seconds':7})
+    revised = service.call('highlight_revise', {'job_id':render['job_id'], 'clip_id':clip['clip_id'], 'expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1', 'start_seconds':1, 'end_seconds':7})
     assert revised['ok'], revised
     worker()
     revision = service.call('highlight_results', {'job_id':revised['job_id']})
@@ -73,17 +140,17 @@ def test_user_ceiling_applies_to_selection_and_revision(prepared):
     request=service.store.get(job)['request']
     request['options']['max_duration_seconds']=300
     service.store.update(job,request=request,duration=400)
-    clip={'start_seconds':0,'end_seconds':180,'title_th':'complete exchange','reason_th':'complete topic','categories':['highlight'],'opening_reason':'The question establishes the topic.','ending_reason':'The response completes the topic.'}
-    result=service.call('highlight_render',{'job_id':job,'clips':[clip]})
+    clip={'start_seconds':0,'end_seconds':180,'title_th':'complete exchange','reason_th':'complete topic','categories':['highlight'],'topic_id':'topic1','opening_reason':'The question establishes the topic.','ending_reason':'The response completes the topic.'}
+    result=service.call('highlight_render',{'job_id':job,'story_id':save_review(service,job),'clips':[clip]})
     assert result['ok'],result
     rendered=service.store.get(result['job_id'])
     assert rendered['request']['options']['max_duration_seconds']==300
     service.store.update(result['job_id'],state='completed',duration=400,source_job=job,clips=[{**clip,'clip_id':'clip_1','revision':1}])
-    revision=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'start_seconds':0,'end_seconds':200})
+    revision=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1','start_seconds':0,'end_seconds':200})
     assert revision['ok'],revision
-    invalid=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'start_seconds':0,'end_seconds':301})
+    invalid=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1','start_seconds':0,'end_seconds':301})
     assert not invalid['ok']
-    override=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'start_seconds':0,'end_seconds':301,'max_duration_seconds':360})
+    override=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1','start_seconds':0,'end_seconds':301,'max_duration_seconds':360})
     assert override['ok'],override
 
 

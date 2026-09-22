@@ -110,7 +110,9 @@
         "clip_id": "clip_fixture_001",
         "expected_revision": 1,
         "start_seconds": 110,
-        "end_seconds": 165
+        "end_seconds": 165,
+        "story_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "topic_id": "topic1"
       },
       "response": {
         "schema_version": "1.0",
@@ -232,9 +234,11 @@
               "highlight"
             ],
             "opening_reason": "The question establishes the topic.",
-            "ending_reason": "The answer resolves the question before the next topic."
+            "ending_reason": "The answer resolves the question before the next topic.",
+            "topic_id": "topic1"
           }
-        ]
+        ],
+        "story_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "response": {
         "schema_version": "1.0",
@@ -245,6 +249,24 @@
         "parent_job_id": "job_11111111111111111111111111111111",
         "state": "queued",
         "reused": false
+      }
+    },
+    {
+      "tool": "highlight_story",
+      "arguments": {
+        "job_id": "job_11111111111111111111111111111111"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "Read full video",
+        "job_id": "job_11111111111111111111111111111111",
+        "coverage_complete": false,
+        "delivered_segments": 0,
+        "total_segments": 10,
+        "story_id": null,
+        "story": null
       }
     }
   ]
