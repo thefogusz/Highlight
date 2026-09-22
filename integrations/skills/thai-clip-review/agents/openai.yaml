@@ -1,0 +1,4 @@
+interface:
+  display_name: "ตรวจคุณภาพคลิปไทย"
+  short_description: "ตรวจบริบท มุก และจังหวะตัดของคลิปจาก Highlight"
+  default_prompt: "ใช้ $thai-clip-review ตรวจคลิป Highlight ล่าสุดว่าบริบทครบและตัดจังหวะเหมาะไหม"
