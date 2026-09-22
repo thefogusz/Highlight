@@ -1,6 +1,6 @@
 # Highlight Codex plugin
 
-This package adds composer discovery metadata, an icon, an agent workflow skill and the existing local MCP server. Standalone MCP registration alone does not provide this plugin entry.
+This package adds the existing local MCP server as a plugin and installs a companion personal skill named Highlight. The separate skill avoids the host's `Plugin: Skill` prefix, giving the composer a single Highlight label, a short Thai description and an icon.
 
 Install the Python runtime from the main README first. Use Codex's plugin-creator scaffold to register `highlight` in the personal marketplace, then run from this repository:
 
@@ -12,7 +12,7 @@ codex plugin list --marketplace personal --json
 
 The preparation script requires an already scaffolded personal plugin. It writes the current venv interpreter into the local `.mcp.json`; the checked-in `.mcp.json` uses `python` as a portable template. It does not edit marketplace files or copy any API key. Model and key remain in the existing Highlight settings and OS credential store.
 
-Start a new task after installation to pick up plugin skills and tools. Search for `Highlight` in the composer mention picker. Select the plugin entry with the purple play icon, not the repository folder. Provide a YouTube link and requested highlights. Plugin registration is distinct from verifying host UI discovery or running a real video analysis.
+Start a new task after installation to pick up the skill and tools. Search for `Highlight` in the composer mention picker. Select the Highlight action with the purple play icon, not the repository folder. Provide a YouTube link and requested highlights. The preparation script installs the personal skill into `~/.codex/skills/highlight` and preserves older bundled skills in a backup outside the plugin.
 
 For updates, run the plugin-creator cachebuster helper after preparing the local source and reinstall `highlight@personal`. The host loads its cached installed copy, not this source directory.
 

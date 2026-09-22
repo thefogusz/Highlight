@@ -1,0 +1,7 @@
+interface:
+  display_name: "Highlight"
+  short_description: "ตัดไฮไลต์จากลิงก์ YouTube เป็นคลิปพร้อมใช้"
+  icon_small: "./assets/highlight.png"
+  icon_large: "./assets/highlight.svg"
+  brand_color: "#8B5CF6"
+  default_prompt: "ใช้ $highlight ตัดไฮไลต์จากลิงก์ YouTube นี้"
