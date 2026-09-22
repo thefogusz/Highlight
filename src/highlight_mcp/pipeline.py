@@ -189,6 +189,16 @@ def run(settings, store, job, check):
         store.update(job["id"], duration=duration)
         stage("transcribe")
         def transcribe():
+            from .subtitles import youtube_subtitles
+            rows, origin = youtube_subtitles(base, job['request']['url'], root, duration, check, command)
+            if rows:
+                store.update(job['id'], transcript_source=origin,
+                             warnings=store.get(job['id'])['warnings'] + ['ใช้คำบรรยายไทยจาก YouTube; ซับอาจคลาดเคลื่อน โดยเฉพาะคำพูดซ้อนและชื่อคน'])
+                return rows
+            store.update(job['id'], transcript_source='whisper',
+                         warnings=store.get(job['id'])['warnings'] + [
+                             'ดึงซับไทยไม่ได้หรือซับใช้ไม่ได้ จึงถอดเสียงด้วย Whisper' if origin == 'fetch_failed_or_unusable'
+                             else 'ไม่พบซับไทยที่ดึงได้ จึงถอดเสียงด้วย Whisper'])
             from .transcription import transcribe_chunks
             return transcribe_chunks(settings, store, job['id'], source, duration, check, command)
         transcript = cached("transcript", transcribe)
