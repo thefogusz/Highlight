@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "highlight": {
+      "command": "python",
+      "args": ["-m", "highlight_mcp", "serve"]
+    }
+  }
+}
