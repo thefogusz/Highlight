@@ -248,7 +248,7 @@ class Service:
                     render_dashboard(self.settings.root, job)
                 except OSError:
                     pass
-            return {"usage": summarize(job), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 15, "warnings": warnings, "next_action": "Use highlight_results for available clips." if job["state"] in TERMINAL else "Wait or resolve configuration if requested."}
+            return {"transcription": job.get("transcription"), "usage": summarize(job), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 60, "warnings": warnings, "next_action": "Use highlight_results for available clips." if job["state"] in TERMINAL else "Wait at least 60 seconds before checking again. Do not batch status calls. During transcription report measured transcription progress only; CPU use is not completion evidence."}
         if name == "highlight_results":
             for clip in job["clips"]:
                 if any(not Path(a["path"]).is_file() for a in clip["artifacts"]):

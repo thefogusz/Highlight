@@ -549,6 +549,42 @@
                   "string",
                   "null"
                 ]
+              },
+              "transcription": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "completed_seconds": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "observed_seconds": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "total_seconds": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "completed_chunks": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "total_chunks": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
               }
             },
             "required": [

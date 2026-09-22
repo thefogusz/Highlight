@@ -189,14 +189,8 @@ def run(settings, store, job, check):
         store.update(job["id"], duration=duration)
         stage("transcribe")
         def transcribe():
-            from faster_whisper import WhisperModel
-            model = WhisperModel(settings.config.get("whisper_model", "small"), device="cpu", compute_type="int8")
-            segments, _ = model.transcribe(str(source), language="th", vad_filter=True)
-            result = []
-            for s in segments:
-                check()
-                result.append({"start": s.start, "end": s.end, "text": s.text})
-            return result
+            from .transcription import transcribe_chunks
+            return transcribe_chunks(settings, store, job['id'], source, duration, check, command)
         transcript = cached("transcript", transcribe)
         from google import genai
         from google.genai import types

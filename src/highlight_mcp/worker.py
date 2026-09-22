@@ -38,7 +38,7 @@ def worker():
                             if shutil.disk_usage(settings.root).free < 2 * 1024**3:
                                 raise Failure("DISK_FULL", "Keep at least 2 GB free for media processing.")
                             folder = settings.root / job["id"]
-                            if sum(p.stat().st_size for p in folder.glob("*") if p.is_file()) > 8 * 1024**3:
+                            if sum(p.stat().st_size for p in folder.rglob("*") if p.is_file()) > 8 * 1024**3:
                                 raise Failure("LIMIT_EXCEEDED", "Job media reached the 8 GB local storage limit.")
                     try:
                         run(settings, store, job, check)

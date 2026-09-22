@@ -49,6 +49,13 @@ def render_dashboard(root, job):
     esc = lambda value: escape(str(value or ''))
     number = lambda value: f'{value:,}' if value is not None else 'ยังไม่ทราบ'
     count = data['attempted_calls']
+    transcription = job.get('transcription')
+    asr = ''
+    if transcription:
+        done, total = transcription['completed_seconds'], transcription['total_seconds']
+        asr = (f'<p>ถอดเสียงและบันทึกแล้ว <b>{done/60:.1f} / {total/60:.1f} นาที</b></p>'
+               f'<progress value="{done}" max="{max(1, total)}" aria-label="ความคืบหน้าการถอดเสียง"></progress>'
+               '<small>บันทึกทุก 2 นาทีของวิดีโอ หากงานหยุดจะเริ่มต่อจากช่วงที่บันทึกแล้ว</small>')
     error = job.get('error') or ''
     error_message = ('งานเดิมหยุดเพราะข้อจำกัดความยาว — อัปเดตแล้ว ให้สั่งลองงานเดิมอีกครั้ง'
                      if 'two hours' in error else 'งานหยุดก่อนเสร็จ ให้ agent ตรวจสาเหตุด้านล่าง')
@@ -74,6 +81,7 @@ h2{{font-size:20px;margin:0 0 8px}}.badge{{background:#363049;color:#ded0ff;padd
 <span class="badge">{esc(states.get(job.get('state'), 'ยังไม่ทราบสถานะ'))}</span></header>
 <section class="panel"><h2>{esc(stages.get(job.get('stage'), 'สถานะงาน'))}</h2>
 <div class="muted">ได้คลิปแล้ว {len(job.get('clips', []))} คลิป</div>
+{asr}
 <div class="row" style="margin-top:24px"><span>เรียก AI ไปแล้ว</span><b>{count} / 30 ครั้ง</b></div>
 <progress value="{min(count, 30)}" max="30" aria-label="จำนวนครั้งที่เรียก AI จากเพดานงาน"></progress>
 <small>เพดานต่อหนึ่งงานของ Highlight — ไม่ใช่โควตาฟรีหรือเปอร์เซ็นต์งานสำเร็จ</small>
