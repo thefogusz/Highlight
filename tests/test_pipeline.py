@@ -1,0 +1,38 @@
+import json
+import subprocess
+
+import pytest
+
+from highlight_mcp.core import Settings, Failure
+from highlight_mcp.pipeline import choose_candidates, render_clip, validate_proposal
+
+
+def test_missing_heatmap_does_not_invent_replay_score():
+    proposals = [{"start_seconds": 10, "end_seconds": 50, "categories": ["funny"], "reason_th": "test"}]
+    selected = choose_candidates(proposals, [], 100, 30, 60, 8, [])
+    assert selected[0]["replay_score"] is None
+
+
+def test_candidate_dedup_and_focus():
+    proposals = [{"start_seconds": 10, "end_seconds": 50}, {"start_seconds": 12, "end_seconds": 48}, {"start_seconds": 70, "end_seconds": 110}]
+    selected = choose_candidates(proposals, [], 120, 20, 60, 8, [{"start_seconds": 0, "end_seconds": 60}])
+    assert len(selected) == 1
+
+
+def test_provider_range_is_grounded():
+    with pytest.raises(Failure):
+        validate_proposal({"start_seconds": 0, "end_seconds": 90}, 60)
+
+
+def test_real_media_render(tmp_path):
+    settings = Settings(tmp_path)
+    ffmpeg = settings.binary("ffmpeg")
+    assert ffmpeg and settings.binary("ffprobe"), "Install FFmpeg before running media integration tests"
+    source = tmp_path / "source.mp4"
+    subprocess.run([ffmpeg, "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=25", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "4", "-c:v", "libx264", "-c:a", "aac", str(source)], check=True)
+    output = tmp_path / "clip.mp4"
+    render_clip(settings, source, output, 1, 3, "16:9", lambda: None)
+    probe = subprocess.run([settings.binary("ffprobe"), "-v", "error", "-show_format", "-show_streams", "-of", "json", str(output)], capture_output=True, check=True)
+    info = json.loads(probe.stdout)
+    assert abs(float(info["format"]["duration"]) - 2) < 0.12
+    assert {s["codec_type"] for s in info["streams"]} >= {"audio", "video"}

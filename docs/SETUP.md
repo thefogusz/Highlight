@@ -1,6 +1,6 @@
 # Settings and host integration design
 
-**Templates only. The Highlight runtime/installer/settings screen does not exist yet. Do not paste these configs expecting a working server today.**
+**Original target design. Local alpha now implements stdio, a Tkinter settings form and OS keyring. Follow [README](../README.md) and [runtime implementation/limits](RUNTIME.md) for executable instructions. Sections below describe the fuller target, not a claim that every feature has shipped.**
 
 ## One-time setup target
 

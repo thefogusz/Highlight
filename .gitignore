@@ -9,3 +9,7 @@ outputs/
 *.log
 cookies*.txt
 config.local.*
+*.egg-info/
+.pytest_cache/
+build/
+dist/

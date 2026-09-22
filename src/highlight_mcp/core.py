@@ -217,6 +217,13 @@ class Service:
             items, cursor = self.page(jobs, args)
             return {"jobs": items, "next_cursor": cursor}
         job = self.store.get(args["job_id"])
+        if job["state"] == "running":
+            from filelock import FileLock, Timeout
+            try:
+                with FileLock(str(self.settings.root / "worker.lock"), timeout=0):
+                    job = self.store.update(job["id"], state="interrupted", error="Worker stopped. Explicit retry is required.")
+            except Timeout:
+                pass
         if name == "highlight_status":
             warnings = job["warnings"] + ([job["error"]] if job["error"] else [])
             return {"job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 15, "warnings": warnings, "next_action": "Use highlight_results for available clips." if job["state"] in TERMINAL else "Wait or resolve configuration if requested."}
@@ -235,7 +242,7 @@ class Service:
                 raise Failure("INVALID_STATE", "Completed jobs are immutable; use highlight_revise.")
             if job["state"] in {"running", "queued"}:
                 return {"job_id": job["id"], "state": job["state"], "reused": True}
-            if not self.settings.public()["ready"]:
+            if not job["request"].get("revision") and not self.settings.public()["ready"]:
                 raise Failure("CONFIG_REQUIRED", "Provider or media tools are not configured.", "Run Highlight Settings, then retry.")
             self.store.update(job["id"], state="queued", cancel_requested=False, error=None)
             self.start_worker()
