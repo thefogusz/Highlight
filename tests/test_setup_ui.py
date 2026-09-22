@@ -1,6 +1,7 @@
 import json
 import time
 import tkinter as tk
+from types import SimpleNamespace
 import pytest
 from highlight_mcp import setup_ui
 
@@ -84,3 +85,23 @@ def test_editing_key_invalidates_old_model_choices(form, monkeypatch):
     wait(form)
     form.key.set('second')
     assert not form.options and form.checked_token is None
+
+
+@pytest.mark.parametrize('symbol', ['v', 'V', 'Thai_oang'])
+def test_control_v_uses_physical_key_on_windows(form, monkeypatch, symbol):
+    events = []
+    monkeypatch.setattr(setup_ui.os, 'name', 'nt')
+    monkeypatch.setattr(form.entry, 'event_generate', lambda event: events.append(event))
+    assert form.control_key(SimpleNamespace(keycode=86, keysym=symbol)) == 'break'
+    assert events == ['<<Paste>>']
+
+
+def test_other_control_keys_keep_native_behavior(form, monkeypatch):
+    monkeypatch.setattr(form.entry, 'event_generate', lambda event: pytest.fail('Unexpected paste'))
+    assert form.control_key(SimpleNamespace(keycode=65, keysym='a')) is None
+
+
+def test_control_v_does_not_paste_while_disabled(form, monkeypatch):
+    form.entry.configure(state='disabled')
+    monkeypatch.setattr(form.entry, 'event_generate', lambda event: pytest.fail('Unexpected paste'))
+    assert form.control_key(SimpleNamespace(keycode=86, keysym='v')) == 'break'

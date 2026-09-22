@@ -29,6 +29,7 @@ class SetupForm:
         self.key = tk.StringVar()
         self.entry = ttk.Entry(frame, textvariable=self.key, show='●')
         self.entry.pack(fill='x', pady=6)
+        self.entry.bind('<Control-KeyPress>', self.control_key)
         existing, source = self.settings.key()
         hint = 'มี key บันทึกอยู่แล้ว เว้นช่องว่างเพื่อใช้ key เดิม' if existing else 'เก็บ key ใน Windows Credential Manager ไม่ส่งเข้าแชต'
         if source == 'environment':
@@ -53,6 +54,14 @@ class SetupForm:
         ttk.Label(frame, text='การตั้งค่าตรวจรายชื่อโมเดลเท่านั้น การวิเคราะห์และค่า API เริ่มเมื่อสั่งตัดคลิป', wraplength=610).pack(anchor='w', pady=12)
         self.key.trace_add('write', self.invalidate)
         self.poll_id = window.after(100, self.poll)
+
+    def control_key(self, event):
+        # Windows VK_V is layout independent; Tk's default binding uses keysym v.
+        if event.keysym.lower() == 'v' or (os.name == 'nt' and event.keycode == 0x56):
+            if not (self.entry.instate(['disabled']) or self.entry.instate(['readonly'])):
+                self.entry.event_generate('<<Paste>>')
+            return 'break'  # Prevent the class binding from pasting twice.
+        return None
 
     def invalidate(self, *_):
         self.checked_token = None
