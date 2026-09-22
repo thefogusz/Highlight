@@ -216,3 +216,34 @@ def test_create_persists_background_outside_render_options(prepared):
     request = service.store.get(created['job_id'])['request']
     assert request['background_research'] == background
     assert 'background_research' not in created['resolved_options']
+
+def test_default_count_is_auto(tmp_path):
+ service=Service(Settings(tmp_path),launch=False)
+ result=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})
+ assert result['ok'] and result['resolved_options']['target_clips']==0
+
+@pytest.mark.parametrize('target,ok',[(0,True),(1,False),(8,True)])
+def test_quality_count_is_not_a_quota(prepared,target,ok):
+ service,job=prepared
+ request=service.store.get(job)['request']
+ request['options']['target_clips']=target
+ service.store.update(job,request=request)
+ story_id=save_review(service,job)
+ clips=[{'start_seconds':a,'end_seconds':b,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'topic_id':'topic1','opening_reason':'Question establishes context.','ending_reason':'Answer completes the exchange.'} for a,b in [(0,6),(6,12)]]
+ result=service.call('highlight_render',{'job_id':job,'story_id':story_id,'clips':clips})
+ assert result['ok']==ok,result
+ if ok: assert len(service.store.get(result['job_id'])['request']['selection']['clips'])==2
+
+@pytest.mark.parametrize('bad',['outside','unknown','duplicate',None])
+def test_candidate_ledger_retained_and_validated(prepared,bad):
+ service,job=prepared
+ save_review(service,job)
+ story=service.call('highlight_story',{'job_id':job})['story']
+ moment={'start_seconds':0,'end_seconds':6,'topic_id':'topic1','reason':'Complete answer','evidence':'Transcript review'}
+ story['candidate_moments']=[moment]
+ if bad=='outside':moment['end_seconds']=100
+ if bad=='unknown':moment['topic_id']='missing'
+ if bad=='duplicate':story['candidate_moments'].append(dict(moment))
+ result=service.call('highlight_story',{'job_id':job,'story':story})
+ assert result['ok']==(bad is None),result
+ if bad is None:assert service.call('highlight_story',{'job_id':job})['story']['candidate_moments']==[moment]

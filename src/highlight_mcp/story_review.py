@@ -28,6 +28,16 @@ def story_response(job, rows, review, story=None):
             normalize = lambda value: ''.join(value.split())
             if normalize(topic['evidence_quote']) not in normalize(text):
                 raise Failure('INVALID_RANGE', 'Topic evidence_quote must appear in transcript within the topic range; do not invent quotes.')
+        topics = {t['topic_id']: t for t in story['topics']}
+        seen = set()
+        for moment in story.get('candidate_moments', []):
+            a, b = moment['start_seconds'], moment['end_seconds']
+            topic = topics.get(moment['topic_id'])
+            if not valid_range(a, b, job['duration']) or not topic or not topic['start_seconds'] <= a < b <= topic['end_seconds']:
+                raise Failure('INVALID_RANGE', 'Candidate must belong to a reviewed topic and original source timeline.')
+            if (a, b) in seen:
+                raise Failure('INVALID_RANGE', 'Duplicate candidate timestamps; deduplicate before reporting counts.')
+            seen.add((a, b))
         story_id = digest({'version': review['version'], 'story': story})
         if story_id != review.get('story_id'):
             review.update(story=story, story_id=story_id, contexts=[], context_progress={})

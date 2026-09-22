@@ -22,7 +22,7 @@
             "funny",
             "most_replayed"
           ],
-          "target_clips": 8,
+          "target_clips": 0,
           "min_duration_seconds": 5,
           "max_duration_seconds": 60,
           "aspect": "16:9",

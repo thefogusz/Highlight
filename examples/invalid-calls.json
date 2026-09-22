@@ -26,7 +26,7 @@
     "tool": "highlight_create",
     "arguments": {
       "url": "https://www.youtube.com/watch?v=abcdefghijk",
-      "target_clips": 0
+      "target_clips": -1
     }
   },
   {

@@ -22,7 +22,7 @@ Deferred: cloud/multi-user deployment, arbitrary file/URL intake, social publish
 |---|---|
 | language | th; เก็บคำพูดไทย ไม่แปลไปอังกฤษก่อนคัด |
 | categories | highlight, important, funny, most_replayed |
-| target_clips | 8 total, 1–20; เป้าหมายไม่ใช่บังคับเติมให้ครบ |
+| target_clips | 0 = automatic (default); 1–20 = explicit user maximum, never a quota |
 | clip length | 30–60 s; configurable 5–60 s; separate clips, never concatenate |
 | aspect | 16:9 original composition; 9:16 uses fit/pad initially |
 | captions | off; optional SRT avoids double captions on TV footage |

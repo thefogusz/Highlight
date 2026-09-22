@@ -40,9 +40,10 @@
           },
           "target_clips": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 20,
-            "default": 8
+            "default": 0,
+            "description": "0 = automatic, quality-led count (default). Do not invent 3 or 8. Positive count is a user-requested maximum, never a quota. Discover all worthwhile moments before choosing a batch."
           },
           "min_duration_seconds": {
             "type": "number",
@@ -335,9 +336,10 @@
                   },
                   "target_clips": {
                     "type": "integer",
-                    "minimum": 1,
+                    "minimum": 0,
                     "maximum": 20,
-                    "default": 8
+                    "default": 0,
+                    "description": "0 = automatic, quality-led count (default). Do not invent 3 or 8. Positive count is a user-requested maximum, never a quota. Discover all worthwhile moments before choosing a batch."
                   },
                   "min_duration_seconds": {
                     "type": "number",
@@ -2781,6 +2783,43 @@
                     }
                   }
                 ]
+              },
+              "candidate_moments": {
+                "type": "array",
+                "maxItems": 200,
+                "description": "Ranked worthwhile moments after full-story review. Keep unrendered alternatives; actual list length is the found count, never invent totals. Empty means no worthwhile moments found.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "start_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "end_seconds": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "topic_id": {
+                      "type": "string"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 5
+                    },
+                    "evidence": {
+                      "type": "string",
+                      "minLength": 5
+                    }
+                  },
+                  "required": [
+                    "start_seconds",
+                    "end_seconds",
+                    "topic_id",
+                    "reason",
+                    "evidence"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [

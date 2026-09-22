@@ -53,3 +53,7 @@ Authenticated retry is supported: after explicit permission for this exact job/v
 
 ## Host-acquired source
 If ingest fails, the host agent owns recovery: follow next_action, try an available supported alternative acquisition method, and resume this same job with highlight_retry.acquired_source (absolute path, source_url, expected_duration_seconds, method). Verify exact video identity and full original timeline first. The server validates media quality and decoding, not content identity. Do not repeat an unchanged failed method, bypass access restrictions or default to asking for MP4. Never claim automatic recovery succeeded without a verified file.
+
+
+## Adaptive selection
+Clip count is quality-led: leave target_clips=0 unless the user explicitly requests a count. Never invent 3 or 8. Discover worthwhile moments across the whole story using real comments/timestamps and replay evidence when available, deduplicate and rank, save candidate_moments in highlight_story. Report only counts backed by that list. Render only strong complete moments; fewer or zero is valid. Keep unrendered candidates for follow-up. The render batch size is an operational limit, not a discovery quota. Check the actual Chrome profile for playback/login; an unsigned-in Codex browser does not prove Chrome is unsigned-in.
