@@ -1,0 +1,5 @@
+interface:
+  display_name: "ตัดคลิป"
+  short_description: "วางลิงก์ YouTube แล้วเลือกช่วงตลกหรือประเด็นสำคัญ"
+  brand_color: "#8B5CF6"
+  default_prompt: "ใช้ $highlight ตัดไฮไลต์จากลิงก์ YouTube นี้"
