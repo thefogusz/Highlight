@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.env
+.env.*
+!.env.example
+data/
+outputs/
+*.sqlite*
+*.log
+cookies*.txt
+config.local.*

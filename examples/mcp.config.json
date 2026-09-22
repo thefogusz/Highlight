@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "highlight": {
+      "command": "C:/PATH/TO/Highlight/.venv/Scripts/python.exe",
+      "args": ["-m", "highlight_mcp", "serve"],
+      "env": {
+        "HIGHLIGHT_DATA_DIR": "C:/PATH/TO/HighlightData"
+      }
+    }
+  }
+}

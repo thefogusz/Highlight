@@ -1,0 +1,11 @@
+# DESIGN TEMPLATE: highlight_mcp is not implemented in this repository yet.
+# Replace the Python path after installing the future runtime.
+[mcp_servers.highlight]
+command = "C:/PATH/TO/Highlight/.venv/Scripts/python.exe"
+args = ["-m", "highlight_mcp", "serve"]
+env_vars = ["GEMINI_API_KEY"]
+startup_timeout_sec = 20
+tool_timeout_sec = 30
+
+[mcp_servers.highlight.env]
+HIGHLIGHT_DATA_DIR = "C:/PATH/TO/HighlightData"
