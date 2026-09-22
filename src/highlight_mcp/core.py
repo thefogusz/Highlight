@@ -66,6 +66,26 @@ def canonical_url(url):
         raise Failure("INVALID_SOURCE", "Use one public HTTPS YouTube video link, without a playlist.") from None
 
 
+def url_start_seconds(url):
+    u = urlsplit(url)
+    query = parse_qs(u.query, keep_blank_values=True)
+    fragment = parse_qs(u.fragment, keep_blank_values=True)
+    values = query.get('t', query.get('start', fragment.get('t', ['0'])))
+    value = values[0]
+    match = re.fullmatch(r'(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?', value)
+    if len(values) != 1 or not value:
+        raise Failure('INVALID_RANGE', 'Invalid YouTube start time.')
+    if value.isascii() and value.isdigit():
+        seconds = int(value)
+    elif match and any(match.groups()):
+        seconds = sum(int(v or 0) * unit for v, unit in zip(match.groups(), (3600, 60, 1)))
+    else:
+        raise Failure('INVALID_RANGE', 'Use a timestamp such as t=574, t=574s or t=9m34s.')
+    if seconds >= MAX_SOURCE_SECONDS:
+        raise Failure('INVALID_RANGE', 'Start time must be below six hours.')
+    return seconds
+
+
 class Settings:
     def __init__(self, root=None):
         default = Path(os.getenv("LOCALAPPDATA", str(Path.home() / ".local"))) / "Highlight"
@@ -207,7 +227,10 @@ class Service:
         if name == "highlight_settings":
             return {**self.settings.public(), "next_action": "Run Highlight Settings to configure the provider if needed."}
         if name == "highlight_create":
-            url = canonical_url(args.pop("url"))
+            original_url = args.pop("url")
+            url = canonical_url(original_url)
+            if 'start_seconds' not in args:
+                args['start_seconds'] = url_start_seconds(original_url)
             request_key = args.pop("idempotency_key", None)
             defaults = {k: copy.deepcopy(v["default"]) for k, v in CATALOG[name]["inputSchema"]["properties"].items() if "default" in v}
             opts = {**defaults, **args}
@@ -241,6 +264,11 @@ class Service:
                 pass
         if name == "highlight_status":
             warnings = job["warnings"] + ([job["error"]] if job["error"] else [])
+            stage_hint = {
+                'discover': 'Selecting candidates from transcript and available replay evidence; video/audio inspection has not yet started.',
+                'inspect': 'Inspecting candidate video/audio; selection is not final until results are available.',
+                'render': 'Rendering selected clips; report only artifacts returned by highlight_results.',
+            }.get(job['stage'], '')
             from .usage import summarize, render_dashboard
             dashboard = self.settings.root / job['id'] / 'dashboard.html'
             if not dashboard.exists():
@@ -248,7 +276,7 @@ class Service:
                     render_dashboard(self.settings.root, job)
                 except OSError:
                     pass
-            return {"transcription": job.get("transcription"), "usage": summarize(job), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 60, "warnings": warnings, "next_action": "Use highlight_results for available clips." if job["state"] in TERMINAL else "Wait at least 60 seconds before checking again. Do not batch status calls. During transcription report measured transcription progress only; CPU use is not completion evidence."}
+            return {"transcription": job.get("transcription"), "usage": summarize(job), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 60, "warnings": warnings, "next_action": "Use highlight_results for available clips. Report the saved error without guessing its cause." if job["state"] in TERMINAL else stage_hint + " Wait at least 60 seconds before checking again. Do not batch status calls. During transcription report measured transcription progress only; CPU use is not completion evidence."}
         if name == "highlight_results":
             for clip in job["clips"]:
                 if any(not Path(a["path"]).is_file() for a in clip["artifacts"]):

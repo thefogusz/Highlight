@@ -108,6 +108,12 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128
+          },
+          "start_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMaximum": 21600,
+            "description": "Select clips from this absolute time until video end. Defaults to the YouTube t/start timestamp, otherwise 0. Explicit 0 overrides a timestamped link."
           }
         },
         "required": [
@@ -251,6 +257,12 @@
                     },
                     "maxItems": 20,
                     "default": []
+                  },
+                  "start_seconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMaximum": 21600,
+                    "description": "Select clips from this absolute time until video end. Defaults to the YouTube t/start timestamp, otherwise 0. Explicit 0 overrides a timestamped link."
                   }
                 },
                 "required": [

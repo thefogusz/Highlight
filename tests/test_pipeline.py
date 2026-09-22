@@ -6,6 +6,17 @@ import pytest
 from highlight_mcp.core import Settings, Failure
 from highlight_mcp.pipeline import choose_candidates, render_clip, validate_proposal
 from highlight_mcp.pipeline import validate_source_duration, discovery_windows
+from highlight_mcp.pipeline import selection_ranges
+
+
+def test_timestamp_scope_filters_early_clips_and_validates_end():
+    focus = selection_ranges({'start_seconds': 574, 'focus_ranges': []}, 1187)
+    selected = choose_candidates([{'start_seconds': 550, 'end_seconds': 590}, {'start_seconds': 574, 'end_seconds': 620}], [], 1187, 30, 60, 8, focus)
+    assert selected == [{'start_seconds': 574, 'end_seconds': 620, 'replay_score': None}]
+    with pytest.raises(Failure):
+        selection_ranges({'start_seconds': 1187, 'focus_ranges': []}, 1187)
+    with pytest.raises(Failure):
+        selection_ranges({'start_seconds': 574, 'focus_ranges': [{'start_seconds': 0, 'end_seconds': 60}]}, 1187)
 
 
 def test_actual_long_episode_is_supported():

@@ -1,10 +1,48 @@
 """Fake provider, real media: proves orchestration, not Thai/model quality."""
 import json
 import subprocess
+import pytest
 from types import SimpleNamespace
 from google import genai
 from highlight_mcp.core import Settings, Service
 from highlight_mcp.pipeline import run
+from highlight_mcp.core import Failure
+
+
+@pytest.mark.parametrize('reply,expected', [('not JSON', 'MODEL_OUTPUT_INVALID'), (None, 'MODEL_OUTPUT_INVALID'), ('[]', 'MODEL_OUTPUT_INVALID'), ('{}', 'MODEL_OUTPUT_INVALID'), (429, 'PROVIDER_RATE_LIMITED')])
+def test_provider_failure_stops_after_one_call(tmp_path, monkeypatch, reply, expected):
+    from google.genai.errors import ClientError
+    from highlight_mcp import pipeline
+    monkeypatch.setenv('GEMINI_API_KEY', 'synthetic-key')
+    monkeypatch.setenv('HIGHLIGHT_MODEL', 'synthetic-model')
+    service = Service(Settings(tmp_path), launch=False)
+    created = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk?t=30', 'heatmap': 'ignore'})
+    job = service.store.get(created['job_id'])
+    root = tmp_path / job['id']
+    root.mkdir()
+    (root / 'metadata.json').write_text(json.dumps({'duration': 120, 'is_live': False}))
+    (root / 'transcript.json').write_text(json.dumps([{'start': 0, 'end': 20, 'text': 'before timestamp'}, {'start': 30, 'end': 120, 'text': 'in scope'}]))
+    (root / 'source.mp4').touch()
+    monkeypatch.setattr(pipeline, 'probe', lambda *args: {'format': {'duration': 120}})
+    calls, closed = [], []
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.models = SimpleNamespace(generate_content=self.generate)
+        def generate(self, **kwargs):
+            calls.append(kwargs)
+            assert 'before timestamp' not in kwargs['contents'][0]
+            if reply == 429:
+                raise ClientError(429, {'error': {'message': 'synthetic-key'}})
+            return SimpleNamespace(text=reply, usage_metadata=None)
+        def close(self):
+            closed.append(True)
+    monkeypatch.setattr(genai, 'Client', FakeClient)
+    with pytest.raises(Failure) as caught:
+        run(service.settings, service.store, job, lambda: None)
+    assert caught.value.code == expected
+    assert 'synthetic-key' not in str(caught.value)
+    assert len(calls) == 1 and closed == [True]
+    assert service.store.get(job['id'])['provider_calls'] == 1
 
 
 def test_cached_ingest_to_verified_clip_with_fake_provider(tmp_path, monkeypatch):

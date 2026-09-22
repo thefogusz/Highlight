@@ -21,6 +21,30 @@ def test_canonical_url_strips_tracking():
     assert canonical_url("https://youtu.be/abcdefghijk?t=30") == "https://www.youtube.com/watch?v=abcdefghijk"
 
 
+@pytest.mark.parametrize('suffix', ['&t=574s', '&start=574', '#t=9m34s'])
+def test_timestamp_is_resolved_and_changes_job_identity(service, suffix):
+    url = 'https://www.youtube.com/watch?v=abcdefghijk'
+    full = service.call('highlight_create', {'url': url})
+    timed = service.call('highlight_create', {'url': url + suffix})
+    assert timed['ok'], timed
+    assert timed['resolved_options']['start_seconds'] == 574
+    assert timed['job_id'] != full['job_id']
+
+
+def test_explicit_start_overrides_link_and_bad_timestamp_rejected(service):
+    url = 'https://youtu.be/abcdefghijk?t=574s'
+    result = service.call('highlight_create', {'url': url, 'start_seconds': 0})
+    assert result['ok'] and result['resolved_options']['start_seconds'] == 0
+    assert not service.call('highlight_create', {'url': url.replace('574s', '-1')})['ok']
+
+
+def test_discover_status_does_not_claim_video_inspected(service):
+    result = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk'})
+    service.store.update(result['job_id'], stage='discover')
+    status = service.call('highlight_status', {'job_id': result['job_id']})
+    assert 'not yet' in status['next_action']
+
+
 def test_missing_key_is_actionable_and_durable(service):
     result = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
     assert result["ok"] and result["state"] == "waiting_for_configuration"
