@@ -46,7 +46,8 @@ def valid_range(start: float, end: float, duration: float) -> bool:
 def no_secret_fields(schema) -> bool:
     if isinstance(schema, dict):
         for key, value in schema.items():
-            if key == "properties" and any(re.search(r"api_?key|password|secret|token", field, re.I) for field in value):
+            counts = {"input_tokens", "output_tokens", "thinking_tokens", "total_tokens"}
+            if key == "properties" and any(re.search(r"api_?key|password|secret|token", field, re.I) and not (field in counts and value[field].get("type") == ["integer", "null"]) for field in value):
                 return False
             if not no_secret_fields(value):
                 return False

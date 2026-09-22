@@ -1,0 +1,28 @@
+from types import SimpleNamespace
+from highlight_mcp.usage import record_usage, summarize, render_dashboard
+
+
+def test_usage_includes_thinking_and_preserves_provider_total():
+    job = {"provider_calls": 2}
+    meta = SimpleNamespace(prompt_token_count=100, candidates_token_count=20,
+                           thoughts_token_count=30, total_token_count=150)
+    job['usage'] = record_usage(job, meta, 'test-model')
+    result = summarize(job)
+    assert result['total_tokens'] == 150
+    assert result['thinking_tokens'] == 30
+    assert result['reported_calls'] == 1
+    assert result['unreported_calls'] == 1
+    assert result['google_remaining'] is None
+
+
+def test_old_jobs_do_not_claim_zero_tokens():
+    assert summarize({'provider_calls': 3})['total_tokens'] is None
+
+
+def test_dashboard_escapes_untrusted_values_and_labels_unknown(tmp_path):
+    path = render_dashboard(tmp_path, {'id': 'job_test', 'state': 'failed',
+                            'error': '<script>alert(1)</script>', 'provider_calls': 2})
+    html = path.read_text(encoding='utf-8')
+    assert '<script>' not in html
+    assert 'ยังไม่ทราบ' in html
+    assert 'โควตาฟรี' in html

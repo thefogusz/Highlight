@@ -13,7 +13,7 @@ def test_worker_renders_revision_without_provider(tmp_path, monkeypatch):
     created = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
     parent_id = created["job_id"]
     folder = tmp_path / parent_id
-    folder.mkdir()
+    folder.mkdir(exist_ok=True)
     source = folder / "source.mp4"
     subprocess.run([settings.binary("ffmpeg"), "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=160x90:rate=10", "-f", "lavfi", "-i", "sine=frequency=440", "-t", "9", "-c:v", "libx264", "-c:a", "aac", str(source)], check=True)
     clip = {"clip_id": "clip_1", "revision": 1, "title_th": "ทดสอบ", "start_seconds": 0, "end_seconds": 5, "categories": ["highlight"], "reason_th": "test", "confidence": "low"}

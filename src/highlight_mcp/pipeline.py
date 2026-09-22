@@ -176,6 +176,9 @@ def run(settings, store, job, check):
             store.update(job["id"], provider_calls=calls+1)
             try:
                 response = client.models.generate_content(model=settings.model, contents=([media] if media else []) + [prompt], config=types.GenerateContentConfig(response_mime_type="application/json", temperature=.2))
+                from .usage import record_usage
+                usage = record_usage(store.get(job['id']), getattr(response, 'usage_metadata', None), settings.model)
+                store.update(job['id'], usage=usage)
                 parsed = json.loads(response.text)
             except Failure:
                 raise

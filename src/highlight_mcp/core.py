@@ -142,6 +142,12 @@ class Store:
             data = json.loads(row[0])
             data.update(changes)
             db.execute("UPDATE jobs SET payload=? WHERE id=?", (json.dumps(data, ensure_ascii=False), job_id))
+            # Serialize dashboard writes with job updates; UI failure must not stop media work.
+            try:
+                from .usage import render_dashboard
+                render_dashboard(self.path.parent, data)
+            except OSError:
+                pass
         return data
 
     def submit(self, request, config, request_key=None):
@@ -230,7 +236,14 @@ class Service:
                 pass
         if name == "highlight_status":
             warnings = job["warnings"] + ([job["error"]] if job["error"] else [])
-            return {"job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 15, "warnings": warnings, "next_action": "Use highlight_results for available clips." if job["state"] in TERMINAL else "Wait or resolve configuration if requested."}
+            from .usage import summarize, render_dashboard
+            dashboard = self.settings.root / job['id'] / 'dashboard.html'
+            if not dashboard.exists():
+                try:
+                    render_dashboard(self.settings.root, job)
+                except OSError:
+                    pass
+            return {"usage": summarize(job), "dashboard_path": str(dashboard) if dashboard.exists() else None, "job_id": job["id"], "state": job["state"], "stage": job["stage"], "progress": job["progress"], "cancel_requested": job["cancel_requested"], "poll_after_seconds": 0 if job["state"] in TERMINAL else 15, "warnings": warnings, "next_action": "Use highlight_results for available clips." if job["state"] in TERMINAL else "Wait or resolve configuration if requested."}
         if name == "highlight_results":
             for clip in job["clips"]:
                 if any(not Path(a["path"]).is_file() for a in clip["artifacts"]):
