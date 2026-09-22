@@ -48,5 +48,8 @@ def worker():
                         store.update(job["id"], state="partial" if store.get(job["id"])["clips"] else "failed", error=f"{exc.code}: {exc}")
                     except Exception:
                         store.update(job["id"], state="partial" if store.get(job["id"])["clips"] else "failed", error="Local pipeline failed. Check installed dependencies and source availability; credentials are not logged.")
+                    finally:
+                        for name in ('browser-session.bin', 'browser-request.json'):
+                            (settings.root / job['id'] / name).unlink(missing_ok=True)
     except Timeout:
         return

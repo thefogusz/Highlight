@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "highlight-mcp"
-version = "0.3.7"
+version = "0.3.8"
 description = "Local Thai YouTube highlight workflow for MCP agents"
 requires-python = ">=3.11"
 dependencies = ["mcp==1.30.0", "yt-dlp==2026.8.19", "yt-dlp-ejs==0.8.0", "faster-whisper==1.2.1", "jsonschema==4.26.0", "filelock==4.0.1", "psutil==7.2.2"]
@@ -16,7 +16,7 @@ highlight-mcp = "highlight_mcp.__main__:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-highlight_mcp = ["tools.json", "assets/*.svg"]
+highlight_mcp = ["tools.json", "browser_identity.json", "assets/*.svg"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

@@ -82,3 +82,7 @@ Research may store up to 12 observed timestamped comments with text, source link
 
 ### Agent download recovery
 If built-in ingestion fails, the host agent can acquire the full source with an available supported tool and return it to the same job through `highlight_retry.acquired_source`. This preserves options and research; the server checks duration, minimum 720p, audio and full decoding before resuming. Video identity is verified by the host agent. This handoff does not guarantee that another downloader can access a blocked YouTube video.
+
+
+### Optional Chrome connection (Windows preview)
+The local companion extension can hand off the existing YouTube session without reading Chrome cookie databases. Setup and limits: [Browser connection](docs/BROWSER_CONNECTION.md). It requires one-time browser installation and consent; it has been tested on the previously failing video DOM9gelySKc (1080p with audio), but is not published to the Chrome Web Store.

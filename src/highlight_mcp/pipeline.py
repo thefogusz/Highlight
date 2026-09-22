@@ -59,7 +59,7 @@ def youtube_failure(stderr):
     """Return safe categories, never raw stderr containing URLs or credentials."""
     text = stderr.lower()
     if 'could not copy' in text and 'cookie' in text:
-        return 'Browser session database is locked. Ask the user to save work and close that browser fully, then retry this same authorized job. Do not kill browser processes or request an MP4.', False
+        return 'Browser session database is locked. Use the supported Highlight Chrome connector with Chrome open. Do not repeatedly ask the user to close Chrome or sign in again; closing Chrome does not solve encryption failures.', False
     if 'decrypt' in text or 'dpapi' in text:
         return 'Browser session encryption is unavailable to this downloader. Do not disable browser security; a supported authorized session method is required.', False
     if 'sign in to confirm' in text or 'not a bot' in text:
@@ -89,7 +89,7 @@ def command(args, check, timeout=3600, _retried=False):
                 time.sleep(.25)
             if p.returncode:
                 err.seek(0)
-                if 'yt_dlp' in [str(a) for a in args]:
+                if any(a in [str(v) for v in args] for a in ('yt_dlp', 'highlight_mcp.browser_download')):
                     message, transient = youtube_failure(err.read().decode('utf-8', errors='replace'))
                     if transient and not _retried:
                         for _ in range(8):
@@ -206,6 +206,15 @@ def run(settings, store, job, check):
             base += ['--cookies-from-browser', job['authorized_browser']]
         if settings.binary("node"):
             base += ["--js-runtimes", "node:" + settings.binary("node")]
+        from .browser_bridge import request_session
+        session = request_session(settings, job, check)
+        if session:
+            # No browser DB reading: the installed extension sends a scoped session.
+            if '--cookies-from-browser' in base:
+                index = base.index('--cookies-from-browser')
+                del base[index:index+2]
+            base = [sys.executable, '-m', 'highlight_mcp.browser_download', str(session), *base[3:]]
+            store.update(job['id'], youtube_access='browser_bridge_connected')
         def fetch_metadata():
             nonlocal base
             from .youtube import fallback_args, fetch_with_fallback

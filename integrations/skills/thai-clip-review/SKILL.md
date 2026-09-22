@@ -68,7 +68,7 @@ An ingest failure is an agent recovery stage, not task completion. Follow highli
 
 
 ## Authorized recovery and quality
-Authenticated retry is supported: after explicit permission for this exact job/video, call highlight_retry with authorized_browser=chrome, edge or firefox. Do not ask again when authorization is already present. Set none to revoke. Never display session values. If the cookie database is locked, ask the user to save work and close the browser fully; do not terminate it yourself or disable encryption. Source downloads prefer 1080p or higher, with 720p as the minimum fallback and best available audio. Render uses 1080 output for HD sources, otherwise 720, H264 CRF18 and AAC192k. Do not label letterboxing or upscaling as additional source detail.
+Authenticated retry is supported: after explicit permission for this exact job/video, call highlight_retry with authorized_browser=chrome, edge or firefox. Do not ask again when authorization is already present. Set none to revoke. Never display session values. If browser session extraction is locked or encrypted, use the Highlight Chrome connector with Chrome open. Never ask for repeated closing/sign-in. If the connector is not installed, report that setup is incomplete. Do not claim it is ready until native messaging succeeds. Source downloads prefer 1080p or higher, with 720p as the minimum fallback and best available audio. Render uses 1080 output for HD sources, otherwise 720, H264 CRF18 and AAC192k. Do not label letterboxing or upscaling as additional source detail.
 
 
 ## Host-agent source handoff

@@ -14,7 +14,7 @@ def recovery_plan(job):
     ]
     if 'database is locked' in error:
         cause = 'browser_session_locked'
-        action = 'Authorization is already present. Ask the user to save work and close the authorized browser fully, then retry the same job. Do not force-close processes, ask permission again or request an MP4.'
+        action = 'Authorization is already present. Use the installed Highlight browser connector with Chrome open; if not installed, explain that setup is incomplete, not that the user must log in again. Do not force-close processes, ask permission again or request an MP4.'
     elif 'session encryption' in error:
         cause = 'browser_session_encryption'
         action = 'Do not disable browser encryption. Explain that this session cannot be read by the downloader and use only a supported authorized authentication method.'

@@ -13,3 +13,7 @@ config.local.*
 .pytest_cache/
 build/
 dist/
+
+# Local extension packaging and private signing keys
+*.pem
+*.crx
