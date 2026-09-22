@@ -74,6 +74,17 @@ def test_boolean_model_timestamp_is_rejected():
     assert not valid_range(False, 30, 60)
 
 
+def test_reused_failed_job_is_identified_as_historical(service):
+    request = {'url': 'https://youtu.be/abcdefghijk'}
+    created = service.call('highlight_create', request)
+    service.store.update(created['job_id'], state='failed', error='old two hour limit')
+    result = service.call('highlight_create', request)
+    assert result['ok'] and result['reused']
+    assert result['poll_after_seconds'] == 0
+    assert 'highlight_retry' in result['next_action']
+    assert 'earlier attempt' in result['warnings'][0]
+
+
 def test_retry_restarts_stranded_queued_job(service, monkeypatch):
     job = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
     service.store.update(job["job_id"], state="queued")

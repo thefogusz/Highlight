@@ -218,6 +218,11 @@ class Service:
                 job = self.store.update(job["id"], state="waiting_for_configuration")
             if job["state"] == "queued":
                 self.start_worker()
+            if reused and job["state"] in {"failed", "partial", "interrupted", "cancelled"}:
+                return {"job_id": job["id"], "state": job["state"], "reused": True, "resolved_options": opts,
+                        "poll_after_seconds": 0,
+                        "warnings": ["This is a saved result from an earlier attempt, not a new analysis or a check of current runtime limits."],
+                        "next_action": "Explain this is a previous attempt. Use highlight_retry for this job if the user has requested trying again; otherwise ask before retrying. Do not present its old error as a current runtime limitation."}
             return {"job_id": job["id"], "state": job["state"], "reused": reused, "resolved_options": opts, "poll_after_seconds": 15, "next_action": "Run Highlight Settings, then highlight_retry." if job["state"] == "waiting_for_configuration" else "Poll highlight_status after 15 seconds."}
         if name == "highlight_jobs":
             jobs = [{"job_id": j["id"], "state": j["state"], "created_at": j["created"], "source_url": j["request"]["url"]} for j in self.store.all()]
