@@ -1,4 +1,6 @@
 import json
+import base64
+from pathlib import Path
 import anyio
 from mcp import types
 from mcp.server import Server
@@ -8,11 +10,13 @@ from .core import Service, Settings, TOOLS
 
 
 async def serve():
-    server = Server("highlight")
+    icon_data = (Path(__file__).parent / "assets" / "highlight.svg").read_bytes()
+    icons = [types.Icon(src="data:image/svg+xml;base64," + base64.b64encode(icon_data).decode("ascii"), mimeType="image/svg+xml", sizes=["any"])]
+    server = Server("highlight", icons=icons, website_url="https://github.com/thefogusz/Highlight")
 
     @server.list_tools()
     async def list_tools():
-        return [types.Tool(**tool) for tool in TOOLS]
+        return [types.Tool(**tool, icons=icons) for tool in TOOLS]
 
     @server.call_tool(validate_input=False)
     async def call_tool(name, arguments):
