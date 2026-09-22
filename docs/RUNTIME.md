@@ -30,7 +30,7 @@ This is an installable alpha, not completion of every requirement in SPEC/ARCHIT
 
 ## Verification performed
 
-28 tests pass: input validation, secret non-echo, deduplication, schema outputs, MCP subprocess handshake/list/calls, real synthetic FFmpeg render/decode, real worker revision without a provider, crash state, and fake-provider discovery/inspection with real media and SRT output. 105 original design-contract checks pass separately.
+28 tests pass: input validation, secret non-echo, deduplication, schema outputs, MCP subprocess handshake/list/calls, real synthetic FFmpeg render/decode, real worker revision without a provider, crash state, and fake-provider discovery/inspection with real media and SRT output. 108 design-contract/link checks pass separately.
 
 Not verified: live YouTube extraction, real Gemini video responses, Whisper accuracy on Thai talk shows, Codex inline video UI, human judgment of highlights.
 

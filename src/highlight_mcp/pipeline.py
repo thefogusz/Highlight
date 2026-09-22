@@ -160,12 +160,13 @@ def run(settings, store, job, check):
             store.update(job["id"], provider_calls=calls+1)
             try:
                 response = client.models.generate_content(model=settings.model, contents=([media] if media else []) + [prompt], config=types.GenerateContentConfig(response_mime_type="application/json", temperature=.2))
-                check()
-                return json.loads(response.text)
+                parsed = json.loads(response.text)
             except Failure:
                 raise
             except Exception:
                 raise Failure("PROVIDER_OUTCOME_UNKNOWN", "Provider response unavailable or invalid. No automatic charged retry was made.") from None
+            check()
+            return parsed
         try:
             stage("discover")
             def discover():
