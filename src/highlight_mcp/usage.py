@@ -14,8 +14,12 @@ def record_usage(job, metadata, model):
         return usage
     for label, field in fields.items():
         value = getattr(metadata, field, None)
-        if type(value) is int and value >= 0:
-            usage[label] = usage.get(label, 0) + value
+        previous = usage.get(label, 0 if not usage.get('reported_calls') else None)
+        # Once a response omits a component, its cumulative total is unknown.
+        # Keeping the old subtotal would make an incomplete breakdown look exact.
+        usage[label] = (previous + value
+                        if type(value) is int and value >= 0 and previous is not None
+                        else None)
     usage['reported_calls'] = usage.get('reported_calls', 0) + 1
     usage['last_model'] = model
     usage['updated_at'] = datetime.now(timezone.utc).isoformat()

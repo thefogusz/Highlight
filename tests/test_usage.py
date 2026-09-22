@@ -19,6 +19,31 @@ def test_old_jobs_do_not_claim_zero_tokens():
     assert summarize({'provider_calls': 3})['total_tokens'] is None
 
 
+def test_missing_token_breakdown_never_displays_partial_sum_as_complete():
+    job = {}
+    job['usage'] = record_usage(job, SimpleNamespace(total_token_count=150,
+        prompt_token_count=100, candidates_token_count=20, thoughts_token_count=30), 'test')
+    job['usage'] = record_usage(job, SimpleNamespace(total_token_count=200,
+        prompt_token_count=120, candidates_token_count=80), 'test')
+    assert job['usage']['total_tokens'] == 350
+    assert job['usage']['thinking_tokens'] is None
+    job['usage'] = record_usage(job, SimpleNamespace(total_token_count=150,
+        prompt_token_count=100, candidates_token_count=20, thoughts_token_count=30), 'test')
+    assert job['usage']['thinking_tokens'] is None
+
+
+def test_dashboard_write_failure_does_not_lose_job_update(tmp_path, monkeypatch):
+    from highlight_mcp.core import Store
+    from highlight_mcp import usage
+    store = Store(tmp_path)
+    job, _ = store.submit({'url': 'https://youtu.be/abcdefghijk'}, {})
+    def denied(*args):
+        raise PermissionError('File locked by preview')
+    monkeypatch.setattr(usage, 'render_dashboard', denied)
+    store.update(job['id'], state='completed')
+    assert store.get(job['id'])['state'] == 'completed'
+
+
 def test_dashboard_escapes_untrusted_values_and_labels_unknown(tmp_path):
     path = render_dashboard(tmp_path, {'id': 'job_test', 'state': 'failed',
                             'error': '<script>alert(1)</script>', 'provider_calls': 2})
