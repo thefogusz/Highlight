@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 import json
 import subprocess
 from highlight_mcp.core import Settings, Service
@@ -10,7 +11,7 @@ def test_legacy_revision_cannot_bypass_story_review(tmp_path, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     settings = Settings()
     service = Service(settings, launch=False)
-    created = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
+    created = service.call("highlight_create", {'background_research': OFFLINE_RESEARCH, **{"url": "https://youtu.be/abcdefghijk"}})
     parent_id = created["job_id"]
     folder = tmp_path / parent_id
     folder.mkdir(exist_ok=True)
@@ -25,7 +26,7 @@ def test_legacy_revision_cannot_bypass_story_review(tmp_path, monkeypatch):
 
 def test_crashed_worker_requires_explicit_retry(tmp_path):
     service = Service(Settings(tmp_path), launch=False)
-    job = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
+    job = service.call("highlight_create", {'background_research': OFFLINE_RESEARCH, **{"url": "https://youtu.be/abcdefghijk"}})
     service.store.update(job["job_id"], state="running")
     status = service.call("highlight_status", {"job_id": job["job_id"]})
     assert status["state"] == "interrupted"

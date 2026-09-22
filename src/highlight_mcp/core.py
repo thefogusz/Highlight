@@ -209,6 +209,10 @@ class Service:
         return {**base, "ok": False, "next_action": failure.action, "error": {"code": failure.code, "message": str(failure), "retryable": False, "action": failure.action}}
 
     def dispatch(self, name, args):
+        if name == "highlight_browser_setup":
+            from .browser_setup import setup
+            job = self.store.get(args["job_id"]) if args.get("job_id") else None
+            return setup(self.settings, args.get("action", "status"), job)
         if name == "highlight_settings":
             return {**self.settings.public(), "next_action": "No API key required. The host agent selects highlights. Install FFmpeg if missing."}
         if name == "highlight_create":
@@ -237,7 +241,7 @@ class Service:
             jobs = [{"job_id": j["id"], "state": j["state"], "created_at": j["created"], "source_url": j["request"]["url"]} for j in self.store.all()]
             items, cursor = self.page(jobs, args)
             return {"jobs": items, "next_cursor": cursor}
-        if name in {'highlight_transcript', 'highlight_render', 'highlight_story'}:
+        if name in {'highlight_transcript', 'highlight_render', 'highlight_story', 'highlight_preview'}:
             from .agent_workflow import dispatch
             return dispatch(self, name, args)
         job = self.store.get(args["job_id"])
@@ -252,7 +256,7 @@ class Service:
             except Timeout:
                 pass
         if name == 'highlight_status' and job['state'] == 'awaiting_selection':
-            return {'dashboard_path': str(self.settings.root / job['id'] / 'dashboard.html'), 'transcription': job.get('transcription'), 'job_id': job['id'], 'state': job['state'], 'stage': 'select', 'progress': None, 'cancel_requested': job['cancel_requested'], 'poll_after_seconds': 0, 'warnings': job['warnings'], 'next_action': 'Read ALL FULL-VIDEO highlight_transcript pages once, then save highlight_story before selecting. Output scope does not limit context reading. Review boundary context after the story, then call highlight_render with standalone clips within the requested max_duration_seconds (default 60). Do not wait or poll: the host agent must select now.'}
+            return {'dashboard_path': str(self.settings.root / job['id'] / 'dashboard.html'), 'transcription': job.get('transcription'), 'job_id': job['id'], 'state': job['state'], 'stage': 'select', 'progress': None, 'cancel_requested': job['cancel_requested'], 'poll_after_seconds': 0, 'warnings': job['warnings'], 'next_action': 'Read ALL FULL-VIDEO highlight_transcript pages once, then save highlight_story before selecting. Output scope does not limit context reading. Save ranked candidate_moments, review boundary context after the story, then inspect highlight_preview and submit host-reported audiovisual approval to highlight_render with standalone clips within the requested max_duration_seconds (default 60). Do not wait or poll: the host agent must select now.'}
         if name == "highlight_status":
             from .recovery import recovery_plan, recovery_action
             plan = recovery_plan(job)
@@ -294,6 +298,10 @@ class Service:
                 if job["state"] == "queued":
                     self.start_worker()
                 return {"job_id": job["id"], "state": job["state"], "reused": True}
+            if args.get('background_research'):
+                job = self.store.update(job['id'], request={**job['request'], 'background_research': args['background_research']})
+            if not job['request'].get('background_research'):
+                raise Failure('INVALID_STATE', 'Attach background_research to highlight_retry for this legacy job before restarting ingestion. Preserve this job and its options.')
             if not job["request"].get("revision") and not self.settings.public()["ready"]:
                 raise Failure("CONFIG_REQUIRED", "FFmpeg or ffprobe is missing.", "Install FFmpeg, then retry.")
             if args.get('acquired_source'):
@@ -326,10 +334,12 @@ class Service:
                 raise Failure('INVALID_STATE', 'Prepare and review the source transcript before revising legacy clips.')
             rows = json.loads(transcript_path.read_text(encoding='utf-8'))
             review = current_review(parent, rows)
-            require_review(review, args['story_id'], [{'topic_id': args['topic_id'], 'start_seconds': args['start_seconds'], 'end_seconds': args['end_seconds']}], parent['duration'])
+            require_review(review, args['story_id'], [args], parent['duration'])
+            from .editorial import require_editorial
+            require_editorial(self.settings, parent, review, args)
             if not any(r['start_seconds'] <= args['start_seconds'] < args['end_seconds'] <= r['end_seconds'] for r in selection_ranges(parent['request']['options'], parent['duration'])):
                 raise Failure('INVALID_RANGE', 'Revision lies outside requested output scope.')
-            request = {**job["request"], "revision": {**args, "clip": clip, "source_job": job.get("source_job", job["id"]), "story": review["story"]}}
+            request = {**job["request"], "revision": {**args, "clip": {**clip, "editorial_review": args["editorial_review"]}, "source_job": job.get("source_job", job["id"]), "story": review["story"]}}
             request["options"] = {**request["options"], "max_duration_seconds": maximum}
             revision, reused = self.store.submit(request, {})
             self.start_worker()

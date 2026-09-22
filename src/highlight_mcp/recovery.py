@@ -6,6 +6,7 @@ def recovery_plan(job):
     error = (job.get('error') or '').lower()
     provider = job.get('youtube_access', 'not_attempted')
     common = [
+        'For sign-in, locked/encrypted browser sessions or connector errors, call highlight_browser_setup with this job_id. If setup_required, call action=prepare and show its exact steps/path. After user consent, check status and resume the SAME failed job once; never claim that connection guarantees download.',
         'Keep this job ID, source URL, user options and completed research. Do not recreate the job with defaults.',
         'Check cached source/transcript artifacts and installed yt-dlp, EJS and JS runtime. A cache must belong to this exact video and be valid; do not fabricate a usable file.',
         'Use host browser tools to inspect this exact video if available. Observe whether playback works; never infer this from the title alone.',

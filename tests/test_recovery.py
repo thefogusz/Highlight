@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 from highlight_mcp.recovery import recovery_plan, recovery_action
 
 def test_auth_recovery_preserves_state_and_stops_duplicate_fallback():
@@ -21,7 +22,7 @@ def test_real_status_and_results_return_recovery(tmp_path,monkeypatch):
     from highlight_mcp.core import Service,Settings
     monkeypatch.setenv('HIGHLIGHT_DATA_DIR',str(tmp_path))
     service=Service(Settings(),launch=False)
-    created=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})
+    created=service.call('highlight_create',{'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/abcdefghijk'}})
     job=created['job_id']
     service.store.update(job,state='failed',stage='ingest',error='YouTube requires sign-in verification')
     for tool in ('highlight_status','highlight_results'):
@@ -35,7 +36,7 @@ def test_authorized_browser_scoped_to_job_and_revocable(tmp_path,monkeypatch):
     from highlight_mcp.core import Service,Settings
     monkeypatch.setenv('HIGHLIGHT_DATA_DIR',str(tmp_path))
     service=Service(Settings(),launch=False)
-    job=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})['job_id']
+    job=service.call('highlight_create',{'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/abcdefghijk'}})['job_id']
     service.store.update(job,state='failed',stage='ingest')
     assert service.call('highlight_retry',{'job_id':job,'authorized_browser':'chrome'})['ok']
     assert service.store.get(job)['authorized_browser']=='chrome'

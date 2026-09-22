@@ -26,6 +26,20 @@ def parse_json3(data, duration):
     return sorted(rows, key=lambda r: r['start'])
 
 
+def usable_coverage(rows, duration):
+    """Conservative timing heuristic, not proof of speech coverage or correctness."""
+    if not rows or duration <= 0:
+        return False
+    edge, covered, largest_gap = 0.0, 0.0, 0.0
+    for row in sorted(rows, key=lambda r: r['start']):
+        a, b = max(0, row['start']), min(duration, row['end'])
+        largest_gap = max(largest_gap, a-edge)
+        covered += max(0, b-max(edge, a))
+        edge = max(edge, b)
+    largest_gap = max(largest_gap, duration-edge)
+    return largest_gap <= 30 and covered / duration >= .60
+
+
 def youtube_subtitles(base, url, root, duration, check, command):
     failed = False
     for automatic in (False, True):
@@ -41,7 +55,7 @@ def youtube_subtitles(base, url, root, duration, check, command):
                     # Conservative for talk shows: a truncated track must not replace
                     # the full transcript. This checks time span, not linguistic accuracy.
                     complete_span = rows and rows[0]['start'] <= max(60, duration * .05) and max(r['end'] for r in rows) >= duration * .9
-                    if complete_span and any('\u0e00' <= c <= '\u0e7f' for row in rows for c in row['text']):
+                    if complete_span and usable_coverage(rows, duration) and any('\u0e00' <= c <= '\u0e7f' for row in rows for c in row['text']):
                         return rows, 'youtube_auto_th' if automatic else 'youtube_manual_th'
                     if rows:
                         failed = True

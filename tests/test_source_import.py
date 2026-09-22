@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 import json, subprocess
 import pytest
 from highlight_mcp.core import Service, Settings
@@ -5,7 +6,7 @@ from highlight_mcp.core import Service, Settings
 @pytest.fixture
 def recovery(tmp_path):
  service=Service(Settings(tmp_path), launch=False)
- job=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})['job_id']
+ job=service.call('highlight_create',{'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/abcdefghijk'}})['job_id']
  service.store.update(job,state='failed',stage='ingest')
  source=tmp_path/'host.mp4'
  subprocess.run([service.settings.binary('ffmpeg'),'-v','error','-f','lavfi','-i','color=size=1280x720:rate=10','-f','lavfi','-i','sine=frequency=440','-t','2','-c:v','libx264','-preset','ultrafast','-c:a','aac',str(source)],check=True)

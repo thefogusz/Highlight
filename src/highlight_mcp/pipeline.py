@@ -200,6 +200,8 @@ def run(settings, store, job, check):
         transcript_path = source.parent / "transcript.json"
         transcript = json.loads(transcript_path.read_text(encoding="utf-8")) if transcript_path.exists() else []
     else:
+        if not job['request'].get('background_research'):
+            raise Failure('INVALID_STATE', 'Legacy job needs background_research through highlight_retry before ingest.')
         stage("ingest")
         base = [sys.executable, "-m", "yt_dlp", "--ignore-config", "--no-playlist", "--no-warnings", "--socket-timeout", "30"]
         if job.get('authorized_browser') in {'chrome', 'edge', 'firefox'}:
@@ -279,6 +281,12 @@ def run(settings, store, job, check):
                              else 'ไม่พบซับไทยที่ดึงได้ จึงถอดเสียงด้วย Whisper'])
             from .transcription import transcribe_chunks
             return transcribe_chunks(settings, store, job['id'], source, duration, check, command)
+        transcript_path = root / 'transcript.json'
+        if transcript_path.is_file() and str(job.get('transcript_source', '')).startswith('youtube_'):
+            from .subtitles import usable_coverage
+            previous = json.loads(transcript_path.read_text(encoding='utf-8'))
+            if not usable_coverage(previous, duration):
+                transcript_path.replace(root / 'transcript-rejected.json')
         transcript = cached("transcript", transcribe)
         store.update(job['id'], state='awaiting_selection', stage='select', progress=None)
         return
@@ -297,7 +305,9 @@ def run(settings, store, job, check):
             srt.write_text("\n\n".join(f"{n+1}\n{stamp(max(0,s['start']-p['start_seconds']))} --> {stamp(min(p['end_seconds'],s['end'])-p['start_seconds'])}\n{s['text']}" for n,s in enumerate(rows)), encoding="utf-8")
             if rows:
                 artifacts.append(artifact(srt, job["id"], "transcript", "application/x-subrip"))
-        clip = {"clip_id": p.get("clip_id", f"clip_{i+1}"), "revision": p.get("revision", 0)+1, "title_th": p["title_th"], "start_seconds": p["start_seconds"], "end_seconds": p["end_seconds"], "categories": p["categories"], "reason_th": p["reason_th"], "confidence": p.get("confidence", "low"), "replay_score": None if rev else p["replay_score"], "verification": "verified", "evidence": [{"source": "transcript", "description_th": "Agent เลือกจากบทสนทนา; ตรวจไฟล์ด้วย FFmpeg แล้ว แต่ไม่ได้ยืนยันการตรวจภาพและเสียง", "start_seconds": p["start_seconds"], "end_seconds": p["end_seconds"]}], "artifacts": artifacts}
+        clip = {"clip_id": p.get("clip_id", f"clip_{i+1}"), "revision": p.get("revision", 0)+1, "title_th": p["title_th"], "start_seconds": p["start_seconds"], "end_seconds": p["end_seconds"], "categories": p["categories"], "reason_th": p["reason_th"], "confidence": p.get("confidence", "low"), "replay_score": None if rev else p["replay_score"], "verification": "verified", "evidence": [{"source": "transcript", "description_th": "เลือกจากบทสนทนา; FFmpeg ตรวจไฟล์และระยะเวลาเท่านั้น ผลตรวจภาพ/เสียงที่ Agent รายงานอยู่ใน editorial_review", "start_seconds": p["start_seconds"], "end_seconds": p["end_seconds"]}], "artifacts": artifacts}
+        if p.get('editorial_review'):
+            clip['editorial_review'] = p['editorial_review']
         clips.append(clip)
         store.update(job["id"], clips=clips)
     stage("verify")

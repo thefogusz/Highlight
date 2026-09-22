@@ -27,7 +27,7 @@ python -m venv .venv
 1. `highlight_create` เตรียมวิดีโอ ดึงซับไทยคนทำก่อน แล้วซับไทยอัตโนมัติ หากใช้ไม่ได้จึงเรียก Whisper
 2. `highlight_status` รอจน `awaiting_selection` จากนั้นหยุด poll
 3. `highlight_transcript` อ่านทีละหน้าให้ครบ เก็บบันทึกเรื่องราวก่อน ยังไม่เลือกไฮไลต์ แล้วบันทึก `highlight_story` ให้ครบก่อนเลือกช่วง
-4. Agent จัดอันดับ แล้วส่ง `highlight_render` พร้อมช่วงที่เลือก
+4. Agent บันทึกช่วงเด่นเรียงอันดับ อ่านบริบทรอบจุดตัด และตรวจภาพ/เสียงจาก `highlight_preview` ก่อนส่ง `highlight_render`
 5. รอ **render job ที่คืนมา** แล้วอ่าน `highlight_results` เพื่อแสดง MP4/SRT
 
 การส่ง selection เดิมซ้ำไม่สร้างงานตัดซ้ำ ใช้ `highlight_revise` แก้คลิปที่ตัดแล้ว
@@ -86,3 +86,16 @@ If built-in ingestion fails, the host agent can acquire the full source with an 
 
 ### Optional Chrome connection (Windows preview)
 The local companion extension can hand off the existing YouTube session without reading Chrome cookie databases. Setup and limits: [Browser connection](docs/BROWSER_CONNECTION.md). It requires one-time browser installation and consent; it has been tested on the previously failing video DOM9gelySKc (1080p with audio), but is not published to the Chrome Web Store.
+
+
+## Enforced workflow in 0.4
+
+The user still supplies only the link. The host agent researches the exact video: new `highlight_create` calls require `background_research`. Record unavailable browsing honestly with a reason. Legacy ingestion accepts the brief through `highlight_retry` without recreating the job.
+
+Read the full transcript and save the whole story with an initial empty `candidate_moments` list. Then save ranked worthwhile moments. Zero is valid; no fixed quota. Each render/revision references a zero-based `candidate_index` and stays within that saved candidate. Updating the story or ledger invalidates boundary reads and previews; read boundary context again.
+
+Call `highlight_preview` for the exact cut, surrounding context video and WAV audio. Inspect with host media tools, then supply `preview_id` and `editorial_review` observations of opening, ending, audiovisual cues and limitations. Only approved audiovisual review may render final clips. If media inspection is unavailable, keep a draft preview and explain the limitation; do not invent approval or add a paid model. Revised timestamps require fresh review. Receipts prove preparation, not that an agent watched. Editorial approval is host-reported, never a guarantee of comprehension or humor. `verification` remains a technical file check.
+
+Thai subtitles precede Whisper. A gap over 30 seconds or under 60% merged time coverage makes a track suspect: try the next Thai track, then Whisper. This conservative talk-show heuristic may reject real silent passages and increase local transcription work; it does not prove every spoken word is covered.
+
+For browser setup use `highlight_browser_setup` status/prepare, show its exact folder/steps, recheck after user consent and resume the same failed job. Do not restart cancelled jobs automatically.

@@ -1,0 +1,1 @@
+OFFLINE_RESEARCH = {'status': 'unavailable', 'video_title': 'Synthetic test video', 'brief': 'Offline fixture has no external background.', 'sources': [], 'limitations': 'No browsing in offline tests.'}

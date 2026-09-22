@@ -4,7 +4,14 @@
     {
       "tool": "highlight_create",
       "arguments": {
-        "url": "https://www.youtube.com/watch?v=abcdefghijk"
+        "url": "https://www.youtube.com/watch?v=abcdefghijk",
+        "background_research": {
+          "status": "unavailable",
+          "video_title": "Synthetic test video",
+          "brief": "Offline fixture has no external background.",
+          "sources": [],
+          "limitations": "No browsing in offline tests."
+        }
       },
       "response": {
         "schema_version": "1.0",
@@ -112,7 +119,17 @@
         "start_seconds": 110,
         "end_seconds": 165,
         "story_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "topic_id": "topic1"
+        "topic_id": "topic1",
+        "candidate_index": 0,
+        "preview_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "editorial_review": {
+          "status": "approved",
+          "basis": "audiovisual",
+          "opening_observation": "Synthetic opening observation.",
+          "ending_observation": "Synthetic complete ending.",
+          "media_observation": "Synthetic fixture, not actual media review.",
+          "limitations": "Schema example only."
+        }
       },
       "response": {
         "schema_version": "1.0",
@@ -235,7 +252,17 @@
             ],
             "opening_reason": "The question establishes the topic.",
             "ending_reason": "The answer resolves the question before the next topic.",
-            "topic_id": "topic1"
+            "topic_id": "topic1",
+            "candidate_index": 0,
+            "preview_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "editorial_review": {
+              "status": "approved",
+              "basis": "audiovisual",
+              "opening_observation": "Synthetic opening observation.",
+              "ending_observation": "Synthetic complete ending.",
+              "media_observation": "Synthetic fixture, not actual media review.",
+              "limitations": "Schema example only."
+            }
           }
         ],
         "story_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -267,6 +294,46 @@
         "total_segments": 10,
         "story_id": null,
         "story": null
+      }
+    },
+    {
+      "tool": "highlight_browser_setup",
+      "arguments": {
+        "action": "status"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "Call prepare.",
+        "connection_state": "setup_required",
+        "extension_path": null,
+        "steps": [
+          "Call prepare."
+        ]
+      }
+    },
+    {
+      "tool": "highlight_preview",
+      "arguments": {
+        "job_id": "job_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "story_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "topic_id": "one",
+        "start_seconds": 0,
+        "end_seconds": 10,
+        "candidate_index": 0
+      },
+      "response": {
+        "ok": true,
+        "schema_version": "1.0",
+        "warnings": [],
+        "next_action": "Inspect actual media.",
+        "job_id": "job_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "preview_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "video_path": "C:/example/clip.mp4",
+        "context_path": "C:/example/context.mp4",
+        "audio_path": "C:/example/audio.wav",
+        "clip_offset_in_context_seconds": 0
       }
     }
   ]

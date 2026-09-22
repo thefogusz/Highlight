@@ -59,7 +59,7 @@ def no_secret_fields(schema) -> bool:
 def main() -> None:
     tools = read("contracts/tools.json")["tools"]
     by_name = {tool["name"]: tool for tool in tools}
-    check(len(tools) == len(by_name) == 11, "Expected eleven unique tools")
+    check(len(tools) == len(by_name) == 13, "Expected thirteen unique tools")
     for tool in tools:
         for side in ("inputSchema", "outputSchema"):
             Draft202012Validator.check_schema(tool[side])
@@ -86,7 +86,7 @@ def main() -> None:
         check(rejects(by_name[call["tool"]]["inputSchema"], call["arguments"]), f"Invalid call accepted: {call['tool']}")
 
     create = by_name["highlight_create"]["inputSchema"]
-    check(create["required"] == ["url"], "URL-only workflow regressed")
+    check(set(create["required"]) == {"url", "background_research"}, "Agent research gate missing")
     defaults = {key: value["default"] for key, value in create["properties"].items() if "default" in value}
     check(defaults == calls[0]["response"]["resolved_options"], "Resolved default fixture drift")
     check(defaults["min_duration_seconds"] <= defaults["max_duration_seconds"], "Inverted duration defaults")
@@ -143,7 +143,7 @@ def main() -> None:
             dest = (path.parent / target.split("#")[0]).resolve()
             check(dest.is_relative_to(ROOT) and dest.exists(), f"Broken local link: {path.name} -> {target}")
 
-    print(f"PASS: {CHECKS} offline design checks; 11 tool schemas, fixtures, states, configs and local links.")
+    print(f"PASS: {CHECKS} offline design checks; 13 tool schemas, fixtures, states, configs and local links.")
     print("NOT TESTED: MCP runtime, host connection, YouTube download, provider calls, rendering, Thai editorial quality.")
 
 

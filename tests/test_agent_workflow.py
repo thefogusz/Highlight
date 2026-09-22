@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 import json
 import subprocess
 import pytest
@@ -62,6 +63,7 @@ def save_review(service, job):
         args['cursor']=page['next_cursor']
     duration=service.store.get(job)['duration']
     story={'summary':'A participant asks about the dispute and the other person gives a complete response.', 'participants':['Participant one and participant two'], 'topics':[{'topic_id':'topic1','start_seconds':0,'end_seconds':duration,'setup':'The first speaker asks the question.','resolution':'The second speaker gives the answer.','significance':'This exchange resolves the central dispute.','evidence_quote':'first'}], 'uncertainties':[], 'background_research':{'status':'unavailable','video_title':'Synthetic test video','brief':'Offline synthetic fixture has no web background.','sources':[],'limitations':'Offline test has no browsing capability.'}}
+    story['candidate_moments']=[{'start_seconds':0,'end_seconds':duration,'topic_id':'topic1','reason':'Complete synthetic exchange','evidence':'Synthetic transcript'}]
     result=service.call('highlight_story',{'job_id':job,'story':story})
     assert result['ok'],result
     for boundary in (0,6,7,180,200,301):
@@ -77,11 +79,11 @@ def prepared(tmp_path, monkeypatch):
     monkeypatch.setenv('HIGHLIGHT_DATA_DIR', str(tmp_path))
     monkeypatch.delenv('GEMINI_API_KEY', raising=False)
     service = Service(Settings(tmp_path), launch=False)
-    created = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk', 'min_duration_seconds': 5, 'target_clips': 2, 'heatmap': 'ignore', 'captions': 'srt'})
+    created = service.call('highlight_create', {'background_research': OFFLINE_RESEARCH, **{'url': 'https://youtu.be/abcdefghijk', 'min_duration_seconds': 5, 'target_clips': 2, 'heatmap': 'ignore', 'captions': 'srt'}})
     assert created['ok'] and created['state'] == 'queued'
     folder = tmp_path / created['job_id']
     folder.mkdir()
-    subprocess.run([service.settings.binary('ffmpeg'), '-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=10', '-t', '12', '-c:v', 'libx264', str(folder/'source.mp4')], check=True)
+    subprocess.run([service.settings.binary('ffmpeg'), '-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x90:rate=10', '-f', 'lavfi', '-i', 'sine=frequency=440', '-t', '12', '-c:a', 'aac', '-c:v', 'libx264', str(folder/'source.mp4')], check=True)
     (folder/'metadata.json').write_text(json.dumps({'duration':12, 'is_live':False,'heatmap':[]}))
     (folder/'transcript.json').write_text(json.dumps([{'start':0,'end':6,'text':'first'}, {'start':6,'end':12,'text':'second'}]))
     worker()
@@ -99,6 +101,7 @@ def test_keyless_prepare_select_render_and_idempotency(prepared):
     second = service.call('highlight_transcript', {'job_id':job,'cursor':'1'})
     assert second['segments'][0]['text'] == 'second' and second['next_cursor'] is None
     request={'job_id':job,'story_id':save_review(service,job),'clips':[{'start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'topic_id':'topic1','opening_reason':'The question establishes context.','ending_reason':'The answer completes the exchange.'}]}
+    request['clips']=[reviewed(service, job, c, real=True) for c in request['clips']]
     render=service.call('highlight_render',request)
     assert render['ok'],render
     assert service.call('highlight_render',request)['job_id']==render['job_id']
@@ -110,7 +113,7 @@ def test_keyless_prepare_select_render_and_idempotency(prepared):
     assert clip['evidence'][0]['source']=='transcript'
     assert len(clip['artifacts'])==2
     assert service.store.get(render['job_id']).get('provider_calls',0)==0
-    revised = service.call('highlight_revise', {'job_id':render['job_id'], 'clip_id':clip['clip_id'], 'expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1', 'start_seconds':1, 'end_seconds':7})
+    revised = service.call('highlight_revise', {'job_id':render['job_id'], 'clip_id':clip['clip_id'], 'expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1', **reviewed(service,job,{'topic_id':'topic1','start_seconds':1,'end_seconds':7},real=True)})
     assert revised['ok'], revised
     worker()
     revision = service.call('highlight_results', {'job_id':revised['job_id']})
@@ -141,16 +144,17 @@ def test_user_ceiling_applies_to_selection_and_revision(prepared):
     request['options']['max_duration_seconds']=300
     service.store.update(job,request=request,duration=400)
     clip={'start_seconds':0,'end_seconds':180,'title_th':'complete exchange','reason_th':'complete topic','categories':['highlight'],'topic_id':'topic1','opening_reason':'The question establishes the topic.','ending_reason':'The response completes the topic.'}
-    result=service.call('highlight_render',{'job_id':job,'story_id':save_review(service,job),'clips':[clip]})
+    story_id=save_review(service,job)
+    result=service.call('highlight_render',{'job_id':job,'story_id':story_id,'clips':[reviewed(service,job,clip)]})
     assert result['ok'],result
     rendered=service.store.get(result['job_id'])
     assert rendered['request']['options']['max_duration_seconds']==300
     service.store.update(result['job_id'],state='completed',duration=400,source_job=job,clips=[{**clip,'clip_id':'clip_1','revision':1}])
-    revision=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1','start_seconds':0,'end_seconds':200})
+    revision=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1',**reviewed(service,job,{'topic_id':'topic1','start_seconds':0,'end_seconds':200})})
     assert revision['ok'],revision
-    invalid=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1','start_seconds':0,'end_seconds':301})
+    invalid=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1',**reviewed(service,job,{'topic_id':'topic1','start_seconds':0,'end_seconds':301})})
     assert not invalid['ok']
-    override=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1','start_seconds':0,'end_seconds':301,'max_duration_seconds':360})
+    override=service.call('highlight_revise',{'job_id':result['job_id'],'clip_id':'clip_1','expected_revision':1,'story_id':service.store.get(job)['story_review']['story_id'],'topic_id':'topic1',**reviewed(service,job,{'topic_id':'topic1','start_seconds':0,'end_seconds':301}),'max_duration_seconds':360})
     assert override['ok'],override
 
 
@@ -184,6 +188,9 @@ def test_background_research_required_and_inherited(prepared):
     save_review(service, job)
     story = service.call('highlight_story', {'job_id': job})['story']
     background = story.pop('background_research')
+    request = service.store.get(job)['request']
+    request['background_research'] = None
+    service.store.update(job, request=request)
     missing = service.call('highlight_story', {'job_id': job, 'story': story})
     assert not missing['ok']
     request = service.store.get(job)['request']
@@ -211,7 +218,7 @@ def test_create_persists_background_outside_render_options(prepared):
                   'limitations':'Publication date unknown.',
                   'sources':[{'url':'https://example.com/story', 'title':'Fixture source',
                               'kind':'reporting', 'finding':'Reported chronology for a synthetic test.', 'date':'unknown'}]}
-    created = service.call('highlight_create', {'url':'https://youtu.be/zzzzzzzzzzz', 'background_research':background})
+    created = service.call('highlight_create', {'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/zzzzzzzzzzz', 'background_research':background}})
     assert created['ok'], created
     request = service.store.get(created['job_id'])['request']
     assert request['background_research'] == background
@@ -219,7 +226,7 @@ def test_create_persists_background_outside_render_options(prepared):
 
 def test_default_count_is_auto(tmp_path):
  service=Service(Settings(tmp_path),launch=False)
- result=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})
+ result=service.call('highlight_create',{'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/abcdefghijk'}})
  assert result['ok'] and result['resolved_options']['target_clips']==0
 
 @pytest.mark.parametrize('target,ok',[(0,True),(1,False),(8,True)])
@@ -230,7 +237,7 @@ def test_quality_count_is_not_a_quota(prepared,target,ok):
  service.store.update(job,request=request)
  story_id=save_review(service,job)
  clips=[{'start_seconds':a,'end_seconds':b,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'topic_id':'topic1','opening_reason':'Question establishes context.','ending_reason':'Answer completes the exchange.'} for a,b in [(0,6),(6,12)]]
- result=service.call('highlight_render',{'job_id':job,'story_id':story_id,'clips':clips})
+ result=service.call('highlight_render',{'job_id':job,'story_id':story_id,'clips':[reviewed(service,job,c) for c in clips]})
  assert result['ok']==ok,result
  if ok: assert len(service.store.get(result['job_id'])['request']['selection']['clips'])==2
 
@@ -247,3 +254,74 @@ def test_candidate_ledger_retained_and_validated(prepared,bad):
  result=service.call('highlight_story',{'job_id':job,'story':story})
  assert result['ok']==(bad is None),result
  if bad is None:assert service.call('highlight_story',{'job_id':job})['story']['candidate_moments']==[moment]
+
+
+def reviewed(service, job, clip, real=False):
+    """Synthetic host approval for tests; real=True exercises actual preview encoding."""
+    from highlight_mcp.editorial import identity
+    saved=service.store.get(job)
+    clip={**clip, 'candidate_index':0}
+    if real:
+        result=service.call('highlight_preview',{'job_id':job,'story_id':saved['story_review']['story_id'], **{k:clip[k] for k in ('topic_id','start_seconds','end_seconds','candidate_index')}})
+        assert result['ok'],result
+        key=result['preview_id']
+    else:
+        key=identity(service.settings,saved,saved['story_review'],clip)
+        folder=service.settings.root/job/'previews'/key
+        folder.mkdir(parents=True,exist_ok=True)
+        for name in ('clip.mp4','context.mp4','audio.wav','receipt.json'):
+            (folder/name).write_text('Synthetic unit-test media receipt')
+    return {**clip,'preview_id':key,'editorial_review':{'status':'approved','basis':'audiovisual','opening_observation':'Synthetic opening for test only.','ending_observation':'Synthetic ending for test only.','media_observation':'Synthetic test signal, not real editorial inspection.','limitations':'Offline fixture approval.'}}
+
+
+@pytest.mark.parametrize('problem', ['missing_preview', 'transcript_only', 'needs_changes', 'unavailable', 'stale_boundary', 'empty_ledger'])
+def test_editorial_gate_blocks_unreviewed_final(prepared, problem):
+    service, job = prepared
+    story_id = save_review(service, job)
+    clip = reviewed(service, job, {'topic_id':'topic1','start_seconds':0,'end_seconds':6,'title_th':'test','reason_th':'dialogue','categories':['highlight'],'opening_reason':'The question establishes context.','ending_reason':'The answer finishes the exchange.'})
+    if problem == 'missing_preview':
+        clip['preview_id'] = '0'*64
+    elif problem == 'transcript_only':
+        clip['editorial_review']['basis'] = 'transcript_only'
+    elif problem in ('needs_changes', 'unavailable'):
+        clip['editorial_review']['status'] = problem
+    elif problem == 'stale_boundary':
+        clip['end_seconds'] = 7
+    else:
+        story = service.call('highlight_story', {'job_id':job})['story']
+        story['candidate_moments'] = []
+        story_id = service.call('highlight_story', {'job_id':job,'story':story})['story_id']
+    result = service.call('highlight_render', {'job_id':job,'story_id':story_id,'clips':[clip]})
+    assert not result['ok'], result
+    assert len(service.store.all()) == 1
+
+
+def test_preview_has_actual_picture_sound_and_reuses_files(prepared):
+    service, job = prepared
+    story_id = save_review(service, job)
+    args = {'job_id':job,'story_id':story_id,'topic_id':'topic1','candidate_index':0,'start_seconds':1,'end_seconds':7}
+    first = service.call('highlight_preview', args)
+    assert first['ok'], first
+    from pathlib import Path
+    from highlight_mcp.pipeline import probe
+    video = Path(first['video_path'])
+    modified = video.stat().st_mtime_ns
+    info = probe(service.settings, video, lambda:None)
+    assert abs(float(info['format']['duration'])-6) < .3
+    assert {s['codec_type'] for s in info['streams']} >= {'audio','video'}
+    assert Path(first['audio_path']).stat().st_size > 1000
+    assert first['clip_offset_in_context_seconds'] == 1
+    assert service.call('highlight_preview', args) == first
+    assert video.stat().st_mtime_ns == modified
+    assert len(service.store.all()) == 1
+
+
+def test_preview_rejects_non_candidate_and_no_audio(prepared):
+    service, job = prepared
+    story_id = save_review(service, job)
+    args = {'job_id':job,'story_id':story_id,'topic_id':'topic1','candidate_index':1,'start_seconds':0,'end_seconds':6}
+    assert not service.call('highlight_preview', args)['ok']
+    source=service.settings.root/job/'source.mp4'
+    subprocess.run([service.settings.binary('ffmpeg'),'-v','error','-y','-f','lavfi','-i','color=size=160x90:rate=10','-t','12','-c:v','libx264',str(source)],check=True)
+    args['candidate_index']=0
+    assert not service.call('highlight_preview', args)['ok']

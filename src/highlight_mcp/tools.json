@@ -258,7 +258,8 @@
           }
         },
         "required": [
-          "url"
+          "url",
+          "background_research"
         ],
         "additionalProperties": false
       },
@@ -1012,7 +1013,8 @@
                       ]
                     },
                     "verification": {
-                      "const": "verified"
+                      "const": "verified",
+                      "description": "Media decoding and duration verification only. See editorial_review for host-reported judgment; legacy clips may have no editorial review."
                     },
                     "artifacts": {
                       "type": "array",
@@ -1074,6 +1076,52 @@
                           "kind"
                         ]
                       }
+                    },
+                    "editorial_review": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "enum": [
+                            "approved",
+                            "needs_changes",
+                            "unavailable"
+                          ]
+                        },
+                        "basis": {
+                          "enum": [
+                            "audiovisual",
+                            "transcript_only"
+                          ]
+                        },
+                        "opening_observation": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 800
+                        },
+                        "ending_observation": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 800
+                        },
+                        "media_observation": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 800
+                        },
+                        "limitations": {
+                          "type": "string",
+                          "maxLength": 800
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "basis",
+                        "opening_observation",
+                        "ending_observation",
+                        "media_observation",
+                        "limitations"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -1252,6 +1300,62 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 199,
+            "description": "Zero-based position in the saved ranked candidate_moments list for the current story_id."
+          },
+          "preview_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "editorial_review": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "enum": [
+                  "approved",
+                  "needs_changes",
+                  "unavailable"
+                ]
+              },
+              "basis": {
+                "enum": [
+                  "audiovisual",
+                  "transcript_only"
+                ]
+              },
+              "opening_observation": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 800
+              },
+              "ending_observation": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 800
+              },
+              "media_observation": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 800
+              },
+              "limitations": {
+                "type": "string",
+                "maxLength": 800
+              }
+            },
+            "required": [
+              "status",
+              "basis",
+              "opening_observation",
+              "ending_observation",
+              "media_observation",
+              "limitations"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -1261,7 +1365,10 @@
           "start_seconds",
           "end_seconds",
           "story_id",
-          "topic_id"
+          "topic_id",
+          "candidate_index",
+          "preview_id",
+          "editorial_review"
         ],
         "additionalProperties": false
       },
@@ -1614,6 +1721,146 @@
               "method"
             ],
             "additionalProperties": false
+          },
+          "background_research": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "video_title",
+              "brief",
+              "sources",
+              "limitations"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "completed",
+                  "unavailable",
+                  "user_skipped"
+                ]
+              },
+              "video_title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "brief": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 2500
+              },
+              "limitations": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "sources": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "url",
+                    "title",
+                    "kind",
+                    "finding",
+                    "date"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^https?://"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "kind": {
+                      "enum": [
+                        "primary",
+                        "reporting",
+                        "opinion"
+                      ]
+                    },
+                    "finding": {
+                      "type": "string",
+                      "minLength": 5,
+                      "maxLength": 800
+                    },
+                    "date": {
+                      "type": "string",
+                      "maxLength": 100
+                    }
+                  }
+                }
+              },
+              "comment_signals": {
+                "type": "array",
+                "maxItems": 12,
+                "description": "Observed timestamped comments from this video. Leads for inspection, not proof of humor.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "timestamp_seconds",
+                    "text",
+                    "likes",
+                    "url"
+                  ],
+                  "properties": {
+                    "timestamp_seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 800
+                    },
+                    "likes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^https://"
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "completed"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "sources": {
+                      "minItems": 1
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "limitations": {
+                      "minLength": 10
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         "required": [
@@ -2386,6 +2633,62 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 80
+                },
+                "candidate_index": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 199,
+                  "description": "Zero-based position in the saved ranked candidate_moments list for the current story_id."
+                },
+                "preview_id": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "editorial_review": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "approved",
+                        "needs_changes",
+                        "unavailable"
+                      ]
+                    },
+                    "basis": {
+                      "enum": [
+                        "audiovisual",
+                        "transcript_only"
+                      ]
+                    },
+                    "opening_observation": {
+                      "type": "string",
+                      "minLength": 10,
+                      "maxLength": 800
+                    },
+                    "ending_observation": {
+                      "type": "string",
+                      "minLength": 10,
+                      "maxLength": 800
+                    },
+                    "media_observation": {
+                      "type": "string",
+                      "minLength": 10,
+                      "maxLength": 800
+                    },
+                    "limitations": {
+                      "type": "string",
+                      "maxLength": 800
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "basis",
+                    "opening_observation",
+                    "ending_observation",
+                    "media_observation",
+                    "limitations"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -2396,7 +2699,10 @@
                 "categories",
                 "opening_reason",
                 "ending_reason",
-                "topic_id"
+                "topic_id",
+                "candidate_index",
+                "preview_id",
+                "editorial_review"
               ],
               "additionalProperties": false
             }
@@ -2787,7 +3093,7 @@
               "candidate_moments": {
                 "type": "array",
                 "maxItems": 200,
-                "description": "Ranked worthwhile moments after full-story review. Keep unrendered alternatives; actual list length is the found count, never invent totals. Empty means no worthwhile moments found.",
+                "description": "Ranked worthwhile moments, highest priority first. Initial whole-story save may use an empty list; then update with the shortlist after story synthesis. Render must reference a list index and stay within that candidate. Keep alternatives; never invent counts.",
                 "items": {
                   "type": "object",
                   "properties": {
@@ -2826,7 +3132,8 @@
               "summary",
               "participants",
               "topics",
-              "uncertainties"
+              "uncertainties",
+              "candidate_moments"
             ],
             "additionalProperties": false
           }
@@ -2895,6 +3202,345 @@
               "total_segments",
               "story_id",
               "story"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_browser_setup",
+      "description": "Check local YouTube connector readiness without reading sessions. prepare bundles extension files and registers the native host for the current Windows user; user installs/enables extension and consents in Chrome. Supply original job_id for recovery guidance. Does not retry or start jobs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "status",
+              "prepare"
+            ],
+            "default": "status"
+          },
+          "job_id": {
+            "type": "string",
+            "pattern": "^job_[a-f0-9]{32}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "const": true
+              },
+              "connection_state": {
+                "enum": [
+                  "unsupported",
+                  "setup_required",
+                  "not_connected",
+                  "connected"
+                ]
+              },
+              "extension_path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ok",
+              "connection_state",
+              "extension_path",
+              "steps",
+              "schema_version",
+              "warnings",
+              "next_action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIG_REQUIRED",
+                      "MODEL_UNAVAILABLE",
+                      "INVALID_SOURCE",
+                      "INVALID_RANGE",
+                      "SOURCE_UNAVAILABLE",
+                      "HEATMAP_UNAVAILABLE",
+                      "LIMIT_EXCEEDED",
+                      "BUDGET_EXCEEDED",
+                      "PROVIDER_RATE_LIMIT",
+                      "PROVIDER_OUTCOME_UNKNOWN",
+                      "MODEL_OUTPUT_INVALID",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REVISION_CONFLICT",
+                      "SOURCE_EXPIRED",
+                      "ARTIFACT_EXPIRED",
+                      "DISK_FULL",
+                      "RENDER_FAILED",
+                      "NOT_FOUND",
+                      "INVALID_STATE",
+                      "INTERNAL_ERROR"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "action"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "highlight_preview",
+      "description": "Prepare small local video plus audio and surrounding context for editorial review AFTER story/candidate and boundary reads. Does not approve content. Use host media tools to inspect before final render. Changed boundaries/story require new preview and review.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "story_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "topic_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "start_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "candidate_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 199,
+            "description": "Zero-based position in the saved ranked candidate_moments list for the current story_id."
+          }
+        },
+        "required": [
+          "job_id",
+          "story_id",
+          "topic_id",
+          "start_seconds",
+          "end_seconds",
+          "candidate_index"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "next_action": {
+                "type": "string"
+              },
+              "ok": {
+                "const": true
+              },
+              "job_id": {
+                "type": "string",
+                "pattern": "^job_[a-f0-9]{32}$"
+              },
+              "preview_id": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "video_path": {
+                "type": "string"
+              },
+              "context_path": {
+                "type": "string"
+              },
+              "audio_path": {
+                "type": "string"
+              },
+              "clip_offset_in_context_seconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "schema_version",
+              "warnings",
+              "next_action",
+              "ok",
+              "job_id",
+              "preview_id",
+              "video_path",
+              "context_path",
+              "audio_path",
+              "clip_offset_in_context_seconds"
             ],
             "additionalProperties": false
           },

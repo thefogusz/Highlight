@@ -77,3 +77,16 @@ When ingest fails, the host agent owns recovery. Use an available supported acqu
 
 ## Adaptive selection
 Clip count is quality-led: leave target_clips=0 unless the user explicitly requests a count. Never invent 3 or 8. Discover worthwhile moments across the whole story using real comments/timestamps and replay evidence when available, deduplicate and rank, save candidate_moments in highlight_story. Report only counts backed by that list. Render only strong complete moments; fewer or zero is valid. Keep unrendered candidates for follow-up. The render batch size is an operational limit, not a discovery quota. Check the actual Chrome profile for playback/login; an unsigned-in Codex browser does not prove Chrome is unsigned-in.
+
+
+## Enforced workflow in 0.4
+
+The user still supplies only the link. The host agent researches the exact video: new `highlight_create` calls require `background_research`. Record unavailable browsing honestly with a reason. Legacy ingestion accepts the brief through `highlight_retry` without recreating the job.
+
+Read the full transcript and save the whole story with an initial empty `candidate_moments` list. Then save ranked worthwhile moments. Zero is valid; no fixed quota. Each render/revision references a zero-based `candidate_index` and stays within that saved candidate. Updating the story or ledger invalidates boundary reads and previews; read boundary context again.
+
+Call `highlight_preview` for the exact cut, surrounding context video and WAV audio. Inspect with host media tools, then supply `preview_id` and `editorial_review` observations of opening, ending, audiovisual cues and limitations. Only approved audiovisual review may render final clips. If media inspection is unavailable, keep a draft preview and explain the limitation; do not invent approval or add a paid model. Revised timestamps require fresh review. Receipts prove preparation, not that an agent watched. Editorial approval is host-reported, never a guarantee of comprehension or humor. `verification` remains a technical file check.
+
+Thai subtitles precede Whisper. A gap over 30 seconds or under 60% merged time coverage makes a track suspect: try the next Thai track, then Whisper. This conservative talk-show heuristic may reject real silent passages and increase local transcription work; it does not prove every spoken word is covered.
+
+For browser setup use `highlight_browser_setup` status/prepare, show its exact folder/steps, recheck after user consent and resume the same failed job. Do not restart cancelled jobs automatically.

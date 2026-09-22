@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 import json,os,time,subprocess,sys,struct
 import pytest
 from highlight_mcp.core import Settings,Service
@@ -7,7 +8,7 @@ pytestmark=pytest.mark.skipif(os.name!='nt',reason='Windows DPAPI bridge')
 
 def prepared(tmp_path):
  service=Service(Settings(tmp_path),launch=False)
- job=service.call('highlight_create',{'url':'https://youtu.be/abcdefghijk'})['job_id']
+ job=service.call('highlight_create',{'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/abcdefghijk'}})['job_id']
  service.store.update(job,state='running',stage='ingest')
  folder=tmp_path/job;folder.mkdir(exist_ok=True)
  (folder/'browser-request.json').write_text(json.dumps({'nonce':'testnonce','expires':time.time()+60}))

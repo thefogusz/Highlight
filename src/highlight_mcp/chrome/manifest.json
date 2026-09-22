@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Highlight \u2014 YouTube connection",
+  "version": "0.3.8",
+  "description": "Connect your existing YouTube session to Highlight on this computer.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq6Dxbl+naq7174zZzoLNWZPB6H3pkNHeFw/DHvOFeRwQ2R0YChRcLK88JqVX0E4v+lV37uMXdWjPtviJ5syp80EKYOb9U4LVlfvymDcq6bsqYTFUqEXmNjhyGXOyaA3lZcA1qEsqHWwCJWymz7PDNubYEnwOIh+PiIJKDCfcnB3QCZn2uYlCX9DaYmO2RfcLfeK2/SdS1DUx9kFtAD/Gwd//ZlVMKUCS943+zRoOtOMbiHeokgiwKe5VKZZqy3G6XWwANcX18f4SezdPzwo19KZjJ9qdVETmpMAgTsZiEbnBZiQ20XmxJFSihS/l8Ck1h2SNWGMhNEwxDROhTWWUMQIDAQAB",
+  "permissions": [
+    "cookies",
+    "nativeMessaging",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

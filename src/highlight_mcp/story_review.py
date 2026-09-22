@@ -30,7 +30,7 @@ def story_response(job, rows, review, story=None):
                 raise Failure('INVALID_RANGE', 'Topic evidence_quote must appear in transcript within the topic range; do not invent quotes.')
         topics = {t['topic_id']: t for t in story['topics']}
         seen = set()
-        for moment in story.get('candidate_moments', []):
+        for moment in story['candidate_moments']:
             a, b = moment['start_seconds'], moment['end_seconds']
             topic = topics.get(moment['topic_id'])
             if not valid_range(a, b, job['duration']) or not topic or not topic['start_seconds'] <= a < b <= topic['end_seconds']:
@@ -51,7 +51,14 @@ def require_review(review, story_id, clips, duration):
     if not review.get('story') or not review['story'].get('background_research') or story_id != review.get('story_id'):
         raise Failure('INVALID_STATE', 'Save a current whole-story review with highlight_story before rendering. A stale story_id is not valid.')
     topics = {t['topic_id']: t for t in review['story']['topics']}
+    candidates = review['story'].get('candidate_moments', [])
     for clip in clips:
+        index = clip.get('candidate_index')
+        if type(index) is not int or not 0 <= index < len(candidates):
+            raise Failure('INVALID_STATE', 'Save ranked candidate_moments and reference a candidate_index before preview or render.')
+        candidate = candidates[index]
+        if candidate['topic_id'] != clip.get('topic_id') or not candidate['start_seconds'] <= clip['start_seconds'] < clip['end_seconds'] <= candidate['end_seconds']:
+            raise Failure('INVALID_RANGE', 'Clip must fit its saved candidate. Update the ledger before changing candidate boundaries.')
         topic = topics.get(clip.get('topic_id'))
         a, b = clip['start_seconds'], clip['end_seconds']
         if not topic or not topic['start_seconds'] <= a < b <= topic['end_seconds']:

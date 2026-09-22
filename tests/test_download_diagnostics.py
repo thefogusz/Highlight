@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 from highlight_mcp.pipeline import youtube_failure
 
 def test_signin_is_not_retried_or_reported_as_render_error():
@@ -14,7 +15,7 @@ def test_transient_retry_classification():
 def test_schema_error_identifies_field_without_echoing_value(tmp_path, monkeypatch):
     from highlight_mcp.core import Service, Settings
     monkeypatch.setenv('HIGHLIGHT_DATA_DIR', str(tmp_path))
-    result = Service(Settings(), launch=False).call('highlight_create', {'url':'https://youtu.be/abcdefghijk', 'target_clips':'secret'})
+    result = Service(Settings(), launch=False).call('highlight_create', {'background_research': OFFLINE_RESEARCH, **{'url':'https://youtu.be/abcdefghijk', 'target_clips':'secret'}})
     assert not result['ok']
     assert 'target_clips' in result['error']['message']
     assert 'secret' not in str(result)

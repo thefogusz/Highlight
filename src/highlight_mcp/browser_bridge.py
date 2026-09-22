@@ -42,9 +42,17 @@ def atomic(path, data):
     temporary.replace(path)
 
 
+def connection_recent(settings):
+    """Allow tiny filesystem clock skew, not stale/far-future heartbeats."""
+    try:
+        age = time.time() - (settings.root / 'browser-connected').stat().st_mtime
+        return -2 <= age < 45
+    except OSError:
+        return False
+
+
 def request_session(settings, job, check, timeout=40):
-    heartbeat = settings.root / 'browser-connected'
-    if not heartbeat.exists() or time.time() - heartbeat.stat().st_mtime > 45:
+    if not connection_recent(settings):
         return None
     root = settings.root / job['id']
     root.mkdir(exist_ok=True)

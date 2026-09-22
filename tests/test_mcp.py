@@ -1,3 +1,4 @@
+from workflow_support import OFFLINE_RESEARCH
 import os
 import sys
 from pathlib import Path
@@ -18,11 +19,11 @@ def test_stdio_handshake_and_tools(tmp_path):
                 initialized = await session.initialize()
                 assert initialized.serverInfo.icons[0].src.startswith('data:image/svg+xml;base64,')
                 catalog = await session.list_tools()
-                assert len(catalog.tools) == 11
+                assert len(catalog.tools) == 13
                 assert all(tool.icons == initialized.serverInfo.icons for tool in catalog.tools)
                 settings = await session.call_tool("highlight_settings", {})
                 assert not settings.isError
                 assert not settings.structuredContent["key_configured"]
-                invalid = await session.call_tool("highlight_create", {"url": "http://localhost/private", "api_key": "do-not-echo"})
+                invalid = await session.call_tool("highlight_create", {'background_research': OFFLINE_RESEARCH, **{"url": "http://localhost/private", "api_key": "do-not-echo"}})
                 assert invalid.isError and "do-not-echo" not in str(invalid)
     anyio.run(exercise)
