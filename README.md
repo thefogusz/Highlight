@@ -13,7 +13,7 @@
 
 Agent เรียก `highlight_create` → ได้ `job_id` → ใช้ `highlight_status` → `highlight_results` → ได้ path ไฟล์ MP4 ผู้ใช้สั่งต่อว่า “คลิป 2 เพิ่มก่อนหน้า 10 วินาที” ผ่าน `highlight_revise` ได้ รุ่นนี้ยังไม่มี gallery/ภาพตัวอย่าง
 
-การติดตั้ง MCP อย่างเดียวอาจไม่ขึ้นในเมนู `@` ของ Codex หากต้องการเลือก `@Highlight` ให้ติดตั้ง [Codex plugin](integrations/codex/README.md) ซึ่งรวมชื่อ ไอคอน skill และ MCP ไว้ด้วยกัน การเล่นวิดีโอและการแจ้งเมื่อเสร็จขึ้นอยู่กับ host
+การติดตั้ง MCP อย่างเดียวอาจไม่ขึ้นในเมนู `@` ของ Codex หากต้องการเลือก `@Highlight` ให้ติดตั้ง [Codex plugin](integrations/codex/README.md) ซึ่งรวมชื่อ ไอคอน และ MCP ไว้ด้วยกัน การเล่นวิดีโอและการแจ้งเมื่อเสร็จขึ้นอยู่กับ host
 
 ## อ่านตามลำดับ
 
@@ -30,6 +30,8 @@ Agent เรียก `highlight_create` → ได้ `job_id` → ใช้ `h
 | [Tool schemas](contracts/tools.json) | input/output schema สำหรับ tools/list |
 
 ## การตั้งค่า API
+
+บนเครื่องที่ติดตั้งทางลัดแล้ว กด Windows แล้วค้นหา **Highlight Settings** เพื่อเปิดหน้ากรอก key อีกครั้ง หรือรัน `.venv\Scripts\pythonw.exe -m highlight_mcp setup` จากโฟลเดอร์ที่ติดตั้ง อ่าน [ผลตรวจและแนวทางลดขั้นตอนตั้งค่า](docs/AUDIT.md)
 
 - รุ่นแรกใช้ `GEMINI_API_KEY` ฝั่งเครื่องที่รัน worker
 - key ตั้งผ่าน environment ของ MCP host ได้ หรือผ่าน local settings form: `python -m highlight_mcp setup`

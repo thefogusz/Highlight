@@ -37,7 +37,7 @@ def digest(value):
 
 
 def valid_range(start, end, duration):
-    return all(isinstance(x, (int, float)) and math.isfinite(x) for x in (start, end, duration)) and 0 <= start < end <= duration
+    return all(type(x) in (int, float) and math.isfinite(x) for x in (start, end, duration)) and 0 <= start < end <= duration
 
 
 def canonical_url(url):
@@ -221,7 +221,10 @@ class Service:
             from filelock import FileLock, Timeout
             try:
                 with FileLock(str(self.settings.root / "worker.lock"), timeout=0):
-                    job = self.store.update(job["id"], state="interrupted", error="Worker stopped. Explicit retry is required.")
+                    # The worker may have finished since the initial status read.
+                    job = self.store.get(job["id"])
+                    if job["state"] == "running":
+                        job = self.store.update(job["id"], state="interrupted", error="Worker stopped. Explicit retry is required.")
             except Timeout:
                 pass
         if name == "highlight_status":
@@ -241,6 +244,8 @@ class Service:
             if job["state"] == "completed":
                 raise Failure("INVALID_STATE", "Completed jobs are immutable; use highlight_revise.")
             if job["state"] in {"running", "queued"}:
+                if job["state"] == "queued":
+                    self.start_worker()
                 return {"job_id": job["id"], "state": job["state"], "reused": True}
             if not job["request"].get("revision") and not self.settings.public()["ready"]:
                 raise Failure("CONFIG_REQUIRED", "Provider or media tools are not configured.", "Run Highlight Settings, then retry.")

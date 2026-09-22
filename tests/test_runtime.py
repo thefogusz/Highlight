@@ -68,3 +68,37 @@ def test_setting_key_not_returned(service, monkeypatch):
 @pytest.mark.parametrize("start,end", [(0, 0), (-1, 2), (2, 1), (0, 61), (float('nan'), 2), (0, float('inf'))])
 def test_temporal_guard(start, end):
     assert not valid_range(start, end, 60)
+
+
+def test_boolean_model_timestamp_is_rejected():
+    assert not valid_range(False, 30, 60)
+
+
+def test_retry_restarts_stranded_queued_job(service, monkeypatch):
+    job = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
+    service.store.update(job["job_id"], state="queued")
+    launches = []
+    monkeypatch.setattr(service, "start_worker", lambda: launches.append(True))
+    result = service.call("highlight_retry", {"job_id": job["job_id"]})
+    assert result["ok"] and result["reused"]
+    assert launches == [True]
+
+
+def test_status_does_not_overwrite_completion_during_lock_acquisition(service, monkeypatch):
+    import filelock
+    job = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
+    service.store.update(job["job_id"], state="running")
+
+    class CompletingLock:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            service.store.update(job["job_id"], state="completed")
+
+        def __exit__(self, *args):
+            pass
+
+    monkeypatch.setattr(filelock, "FileLock", CompletingLock)
+    result = service.call("highlight_status", {"job_id": job["job_id"]})
+    assert result["state"] == "completed"
