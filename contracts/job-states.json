@@ -1,0 +1,65 @@
+{
+  "initial": "queued",
+  "states": [
+    "queued",
+    "running",
+    "waiting_for_configuration",
+    "waiting_for_budget",
+    "interrupted",
+    "completed",
+    "partial",
+    "failed",
+    "cancelled"
+  ],
+  "terminal": [
+    "completed",
+    "partial",
+    "failed",
+    "cancelled"
+  ],
+  "transitions": {
+    "queued": [
+      "running",
+      "cancelled"
+    ],
+    "running": [
+      "completed",
+      "partial",
+      "failed",
+      "cancelled",
+      "waiting_for_configuration",
+      "waiting_for_budget",
+      "interrupted"
+    ],
+    "waiting_for_configuration": [
+      "queued",
+      "cancelled"
+    ],
+    "waiting_for_budget": [
+      "queued",
+      "cancelled"
+    ],
+    "interrupted": [
+      "queued",
+      "cancelled"
+    ],
+    "failed": [
+      "queued"
+    ],
+    "partial": [
+      "queued"
+    ],
+    "cancelled": [
+      "queued"
+    ],
+    "completed": []
+  },
+  "retryable": [
+    "failed",
+    "partial",
+    "cancelled",
+    "interrupted",
+    "waiting_for_configuration",
+    "waiting_for_budget"
+  ]
+}

@@ -18,6 +18,8 @@ Scope: design package only. Review covers correctness, clarity, architecture, cr
 
 See `scripts/check_design.py` and the repository verification command. The checker verifies schema and example consistency, negative request fixtures, a temporal acceptance oracle, state transitions, configuration syntax and local links. The oracle specifies required runtime behavior; it does not prove a runtime implements it.
 
+Observed on 2026-09-22: Python 3.11, jsonschema 4.26.0; `python scripts/check_design.py` passed **105 checks**. Added a required video artifact to the output schema, source URL/duration to results, and clarified explicit retry after partial/cancelled jobs during review. Dependency versions used for this check are pinned in requirements-design.txt. `git diff --cached --check` passed before the final commit.
+
 ## Open release gates
 
 All runtime milestones in IMPLEMENTATION.md remain pending. Need an actual Gemini key/model-access check, real source episode, installed media dependencies, actual MCP host handshake, generated playable clips and Thai editorial evaluation before describing this system as usable. No cost, speed or humor-accuracy result is claimed.

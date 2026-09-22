@@ -1,0 +1,198 @@
+{
+  "fixture_notice": "Synthetic only. No source analyzed, no artifacts produced.",
+  "calls": [
+    {
+      "tool": "highlight_create",
+      "arguments": {
+        "url": "https://www.youtube.com/watch?v=abcdefghijk"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "Poll highlight_status after 15 seconds.",
+        "job_id": "job_fixture_001",
+        "state": "queued",
+        "reused": false,
+        "resolved_options": {
+          "intent": "",
+          "categories": [
+            "highlight",
+            "important",
+            "funny",
+            "most_replayed"
+          ],
+          "target_clips": 8,
+          "min_duration_seconds": 30,
+          "max_duration_seconds": 120,
+          "aspect": "16:9",
+          "captions": "off",
+          "heatmap": "prefer",
+          "focus_ranges": []
+        },
+        "poll_after_seconds": 15
+      }
+    },
+    {
+      "tool": "highlight_status",
+      "arguments": {
+        "job_id": "job_fixture_001"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "none",
+        "job_id": "job_fixture_001",
+        "state": "running",
+        "stage": "inspect",
+        "progress": null,
+        "cancel_requested": false,
+        "poll_after_seconds": 30
+      }
+    },
+    {
+      "tool": "highlight_results",
+      "arguments": {
+        "job_id": "job_fixture_001"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "none",
+        "job_id": "job_fixture_001",
+        "job_state": "completed",
+        "next_cursor": null,
+        "clips": [
+          {
+            "clip_id": "clip_fixture_001",
+            "revision": 1,
+            "title_th": "ตัวอย่างสมมุติ: คำตอบหักมุม",
+            "start_seconds": 120,
+            "end_seconds": 165,
+            "categories": [
+              "funny"
+            ],
+            "reason_th": "ตัวอย่างสำหรับทดสอบสัญญา ไม่ใช่ผลวิเคราะห์จริง",
+            "evidence": [
+              {
+                "source": "audio_visual",
+                "description_th": "เหตุการณ์สมมุติ",
+                "start_seconds": 140,
+                "end_seconds": 145
+              }
+            ],
+            "replay_score": null,
+            "confidence": "medium",
+            "verification": "verified",
+            "artifacts": [
+              {
+                "kind": "video",
+                "mime_type": "video/mp4",
+                "path": "C:/HighlightData/fixtures/clip.mp4",
+                "resource_uri": "highlight://clips/clip_fixture_001/r1/video",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "size_bytes": 1234,
+                "expires_at": "2026-10-22T00:00:00Z"
+              }
+            ]
+          }
+        ],
+        "source_url": "https://www.youtube.com/watch?v=abcdefghijk",
+        "source_duration_seconds": 3600
+      }
+    },
+    {
+      "tool": "highlight_revise",
+      "arguments": {
+        "job_id": "job_fixture_001",
+        "clip_id": "clip_fixture_001",
+        "expected_revision": 1,
+        "start_seconds": 110,
+        "end_seconds": 165
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "none",
+        "job_id": "job_fixture_revision",
+        "parent_job_id": "job_fixture_001",
+        "clip_id": "clip_fixture_001",
+        "state": "queued",
+        "reused": false
+      }
+    },
+    {
+      "tool": "highlight_cancel",
+      "arguments": {
+        "job_id": "job_fixture_001"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "none",
+        "job_id": "job_fixture_001",
+        "state": "running",
+        "cancel_requested": true
+      }
+    },
+    {
+      "tool": "highlight_retry",
+      "arguments": {
+        "job_id": "job_fixture_001"
+      },
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "none",
+        "job_id": "job_fixture_001",
+        "state": "queued",
+        "reused": false
+      }
+    },
+    {
+      "tool": "highlight_settings",
+      "arguments": {},
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "Configure credentials locally.",
+        "provider": "gemini",
+        "model": null,
+        "key_configured": false,
+        "key_source": "none",
+        "key_status": "unknown",
+        "config_version": "fixture_1",
+        "ready": false,
+        "missing": [
+          "GEMINI_API_KEY",
+          "model"
+        ]
+      }
+    },
+    {
+      "tool": "highlight_jobs",
+      "arguments": {},
+      "response": {
+        "schema_version": "1.0",
+        "ok": true,
+        "warnings": [],
+        "next_action": "none",
+        "jobs": [
+          {
+            "job_id": "job_fixture_001",
+            "state": "completed",
+            "created_at": "2026-09-22T00:00:00Z",
+            "source_url": "https://www.youtube.com/watch?v=abcdefghijk"
+          }
+        ],
+        "next_cursor": null
+      }
+    }
+  ]
+}

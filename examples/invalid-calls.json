@@ -1,0 +1,87 @@
+[
+  {
+    "tool": "highlight_create",
+    "arguments": {}
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "https://www.youtube.com/watch?v=abcdefghijk",
+      "api_key": "fixture-not-a-key"
+    }
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "http://127.0.0.1/private"
+    }
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "https://youtube.com.evil.example/watch?v=abcdefghijk"
+    }
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "https://www.youtube.com/watch?v=abcdefghijk",
+      "target_clips": 0
+    }
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "https://www.youtube.com/watch?v=abcdefghijk",
+      "target_clips": 21
+    }
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "https://www.youtube.com/watch?v=abcdefghijk",
+      "categories": [
+        "unknown"
+      ]
+    }
+  },
+  {
+    "tool": "highlight_create",
+    "arguments": {
+      "url": "https://www.youtube.com/watch?v=abcdefghijk",
+      "categories": [
+        "funny",
+        "funny"
+      ]
+    }
+  },
+  {
+    "tool": "highlight_results",
+    "arguments": {
+      "job_id": "job_fixture_001",
+      "limit": 500
+    }
+  },
+  {
+    "tool": "highlight_settings",
+    "arguments": {
+      "GEMINI_API_KEY": "fixture-not-a-key"
+    }
+  },
+  {
+    "tool": "highlight_revise",
+    "arguments": {
+      "job_id": "job_fixture_001",
+      "clip_id": "clip_fixture_001",
+      "expected_revision": 0,
+      "start_seconds": 0,
+      "end_seconds": 10
+    }
+  },
+  {
+    "tool": "highlight_status",
+    "arguments": {
+      "job_id": "../../outside"
+    }
+  }
+]

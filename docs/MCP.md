@@ -19,7 +19,7 @@ Status: specified, not implemented. `contracts/tools.json` is a proposed tools/l
 | highlight_results | job_id, cursor, limit | Paginated verified clips. Ready subset available while running; include job_state. |
 | highlight_revise | job_id, clip_id, expected_revision, start_seconds, end_seconds | New immutable revision; validate source retention, bounds and length before queueing. |
 | highlight_cancel | job_id | Idempotent cancellation request; does not delete files or undo completed provider costs. |
-| highlight_retry | job_id | Resume safe checkpoints of failed/interrupted/waiting job; explicit call allows retry of uncertain provider attempt, surfaced in warnings. |
+| highlight_retry | job_id | Resume failed/partial/cancelled/interrupted/waiting work; completed jobs are immutable. Explicit retry of an uncertain provider attempt may be billed again. |
 | highlight_settings | no arguments | Read-only sanitized readiness + source of key + model/config version. No secret-setting tool. |
 | highlight_jobs | cursor, limit | Find previous jobs after a chat ends, newest first. |
 
@@ -40,6 +40,8 @@ request intent is optional bounded editorial text. It can refine category matchi
 ## Results and evidence
 
 Tool success uses `structuredContent` matching outputSchema plus text JSON fallback of the same object. Keep text concise; use resource_link/image content for artifacts. Every success has schema_version=1.0, warnings, next_action. A standard error uses `isError=true` and structuredContent with ok=false and error={code,message,retryable,action}; no stack trace/provider body/secret returned. Unknown tools or protocol syntax errors use MCP JSON-RPC errors; ordinary business failures use tool errors.
+
+retryable means an automatic retry may be appropriate without changing inputs/configuration. CONFIG_REQUIRED has retryable=false until the user changes settings. highlight_retry is an explicit recovery action, not permission for infinite automatic retries. For partial jobs retry only failed clips; preserve verified outputs. For cancelled jobs an explicit retry revokes the cancellation and resumes safe checkpoints.
 
 Clip metadata: absolute source times, revision, categories, reason_th, evidence list, nullable normalized replay score, AI confidence label (not calibrated probability), verified status, artifacts. excerpt-relative model times are never exposed as original-source times until converted. A source link with timestamp points back to original YouTube video, not the output clip.
 
