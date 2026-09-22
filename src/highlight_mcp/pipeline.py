@@ -76,6 +76,8 @@ def probe(settings, path, check):
 
 
 def render_clip(settings, source, output, start, end, aspect, check):
+    if not valid_range(start, end, end) or end - start > 60:
+        raise Failure("INVALID_RANGE", "Each highlight must be at most 60 seconds. Re-select a shorter complete moment; do not concatenate highlights.")
     info = probe(settings, source, check)
     if not valid_range(start, end, float(info["format"]["duration"])):
         raise Failure("INVALID_RANGE", "Clip lies outside the source.")
@@ -99,7 +101,7 @@ def choose_candidates(proposals, heatmap, duration, minimum, maximum, count, foc
     for p in proposals:
         validate_proposal(p, duration)
         a, b = p["start_seconds"], p["end_seconds"]
-        if not minimum <= b-a <= maximum:
+        if not minimum <= b-a <= min(maximum, 60):
             continue
         if focus and not any(r["start_seconds"] <= a and b <= r["end_seconds"] for r in focus):
             continue
@@ -121,7 +123,9 @@ def artifact(path, job_id, kind, mime):
 def run(settings, store, job, check):
     root = settings.root / job["id"]
     root.mkdir(exist_ok=True)
-    opts = job["request"]["options"]
+    opts = {**job["request"]["options"]}
+    opts['max_duration_seconds'] = min(opts['max_duration_seconds'], 60)
+    opts['min_duration_seconds'] = min(opts['min_duration_seconds'], opts['max_duration_seconds'])
     def stage(name):
         check()
         store.update(job["id"], stage=name)

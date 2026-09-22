@@ -24,7 +24,7 @@
           ],
           "target_clips": 8,
           "min_duration_seconds": 30,
-          "max_duration_seconds": 120,
+          "max_duration_seconds": 60,
           "aspect": "16:9",
           "captions": "off",
           "heatmap": "prefer",

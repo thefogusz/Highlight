@@ -45,6 +45,13 @@ def test_invalid_duration_does_not_queue(service):
     assert service.call("highlight_jobs", {})["jobs"] == []
 
 
+def test_highlights_default_to_one_minute_maximum(service):
+    result = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk'})
+    assert result['resolved_options']['max_duration_seconds'] == 60
+    result = service.call('highlight_create', {'url': 'https://youtu.be/abcdefghijk', 'max_duration_seconds': 61})
+    assert not result['ok']
+
+
 def test_cancel_is_idempotent(service):
     job = service.call("highlight_create", {"url": "https://youtu.be/abcdefghijk"})
     a = service.call("highlight_cancel", {"job_id": job["job_id"]})

@@ -279,8 +279,8 @@ class Service:
                 raise Failure("REVISION_CONFLICT", "Re-read the latest clip revision.")
             if not valid_range(args["start_seconds"], args["end_seconds"], job["duration"]):
                 raise Failure("INVALID_RANGE", "Revision must stay within original source duration.")
-            if not 5 <= args["end_seconds"] - args["start_seconds"] <= 300:
-                raise Failure("INVALID_RANGE", "Revised clip must be 5–300 seconds.")
+            if not 5 <= args["end_seconds"] - args["start_seconds"] <= 60:
+                raise Failure("INVALID_RANGE", "Each highlight must be 5–60 seconds, including revisions.")
             source = self.settings.root / job.get("source_job", job["id"]) / "source.mp4"
             if not source.is_file():
                 raise Failure("SOURCE_EXPIRED", "Original source is no longer available.")
